@@ -8,6 +8,7 @@ import com.folo.reaction.ReactionRepository;
 import com.folo.trade.Trade;
 import com.folo.trade.TradeAccessService;
 import com.folo.trade.TradeRepository;
+import org.springframework.lang.Nullable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +41,7 @@ public class FeedService {
     }
 
     @Transactional(readOnly = true)
-    public FeedResponse friendsFeed(Long currentUserId, Long cursor, int size) {
+    public FeedResponse friendsFeed(Long currentUserId, @Nullable Long cursor, int size) {
         List<Long> userIds = followRepository.findByFollowerId(currentUserId).stream()
                 .map(follow -> follow.getFollowing().getId())
                 .toList();
@@ -62,7 +63,7 @@ public class FeedService {
     }
 
     @Transactional(readOnly = true)
-    public FeedResponse userFeed(Long currentUserId, Long targetUserId, Long cursor, int size) {
+    public FeedResponse userFeed(Long currentUserId, Long targetUserId, @Nullable Long cursor, int size) {
         List<Trade> trades = cursor == null
                 ? tradeRepository.findByUserIdAndDeletedFalseOrderByIdDesc(targetUserId, PageRequest.of(0, size + 1))
                 : tradeRepository.findByUserIdAndDeletedFalseAndIdLessThanOrderByIdDesc(targetUserId, cursor, PageRequest.of(0, size + 1));

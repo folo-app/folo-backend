@@ -18,6 +18,7 @@ import com.folo.user.UserRepository;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -71,7 +72,7 @@ public class ImportService {
     }
 
     @Transactional
-    public CsvImportResponse importCsv(Long userId, MultipartFile file, String brokerCode) {
+    public CsvImportResponse importCsv(Long userId, MultipartFile file, @Nullable String brokerCode) {
         User user = getUser(userId);
         ImportJob job = createJob(user, ImportType.CSV, brokerCode, file.getOriginalFilename());
         job.setStatus(ImportStatus.PROCESSING);
@@ -193,7 +194,7 @@ public class ImportService {
         );
     }
 
-    private ImportJob createJob(User user, ImportType importType, String brokerCode, String filename) {
+    private ImportJob createJob(User user, ImportType importType, @Nullable String brokerCode, @Nullable String filename) {
         ImportJob job = new ImportJob();
         job.setUser(user);
         job.setImportType(importType);
@@ -271,7 +272,7 @@ public class ImportService {
         return result;
     }
 
-    private ImportResult parseOcrFilename(ImportJob job, String originalFilename) {
+    private ImportResult parseOcrFilename(ImportJob job, @Nullable String originalFilename) {
         ImportResult result = new ImportResult();
         result.setImportJob(job);
         result.setSelected(true);

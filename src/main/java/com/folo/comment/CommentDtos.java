@@ -2,13 +2,14 @@ package com.folo.comment;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import org.springframework.lang.Nullable;
 
 import java.util.List;
 
 record CommentUserInfo(
         Long userId,
         String nickname,
-        String profileImage
+        @Nullable String profileImage
 ) {
 }
 

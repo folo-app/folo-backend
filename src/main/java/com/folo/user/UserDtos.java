@@ -4,14 +4,15 @@ import com.folo.common.enums.PortfolioVisibility;
 import com.folo.common.enums.ReturnVisibility;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import org.springframework.lang.Nullable;
 
 import java.util.List;
 
 record MyProfileResponse(
         Long userId,
         String nickname,
-        String profileImage,
-        String bio,
+        @Nullable String profileImage,
+        @Nullable String bio,
         long followerCount,
         long followingCount,
         PortfolioVisibility portfolioVisibility,
@@ -21,11 +22,11 @@ record MyProfileResponse(
 }
 
 record UpdateMyProfileRequest(
-        @Size(min = 2, max = 20) String nickname,
-        @Size(max = 1000) String profileImage,
-        @Size(max = 500) String bio,
-        PortfolioVisibility portfolioVisibility,
-        ReturnVisibility returnVisibility
+        @Nullable @Size(min = 2, max = 20) String nickname,
+        @Nullable @Size(max = 1000) String profileImage,
+        @Nullable @Size(max = 500) String bio,
+        @Nullable PortfolioVisibility portfolioVisibility,
+        @Nullable ReturnVisibility returnVisibility
 ) {
 }
 
@@ -38,8 +39,8 @@ record UpdateKisKeyRequest(
 record PublicProfileResponse(
         Long userId,
         String nickname,
-        String profileImage,
-        String bio,
+        @Nullable String profileImage,
+        @Nullable String bio,
         long followerCount,
         long followingCount,
         boolean isFollowing,
@@ -51,7 +52,7 @@ record PublicProfileResponse(
 record UserSearchItem(
         Long userId,
         String nickname,
-        String profileImage,
+        @Nullable String profileImage,
         long followerCount,
         boolean isFollowing
 ) {

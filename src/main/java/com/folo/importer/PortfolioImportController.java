@@ -2,6 +2,7 @@ package com.folo.importer;
 
 import com.folo.common.api.ApiResponse;
 import com.folo.security.SecurityUtils;
+import org.springframework.lang.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,7 +26,7 @@ public class PortfolioImportController {
     @PostMapping("/import/csv")
     public ApiResponse<CsvImportResponse> importCsv(
             @RequestPart("file") MultipartFile file,
-            @RequestParam(value = "broker", required = false) String broker
+            @Nullable @RequestParam(value = "broker", required = false) String broker
     ) {
         return ApiResponse.success(importService.importCsv(SecurityUtils.currentUserId(), file, broker), "CSV 파싱이 완료되었습니다.");
     }

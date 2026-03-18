@@ -3,6 +3,7 @@ package com.folo.portfolio;
 import com.folo.common.enums.MarketType;
 import com.folo.common.enums.TradeType;
 import com.folo.common.enums.TradeVisibility;
+import org.springframework.lang.Nullable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -13,8 +14,8 @@ public record KisSyncTradePayload(
         TradeType tradeType,
         BigDecimal quantity,
         BigDecimal price,
-        String comment,
-        TradeVisibility visibility,
+        @Nullable String comment,
+        @Nullable TradeVisibility visibility,
         LocalDateTime tradedAt
 ) {
 }

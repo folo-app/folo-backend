@@ -22,6 +22,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.lang.Nullable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -64,6 +65,7 @@ public class Trade extends BaseTimeEntity {
     private BigDecimal totalAmount;
 
     @Column(length = 300)
+    @Nullable
     private String comment;
 
     @Enumerated(EnumType.STRING)
@@ -80,10 +82,20 @@ public class Trade extends BaseTimeEntity {
     @Column(nullable = false)
     private boolean deleted;
 
+    @Nullable
     private LocalDateTime deletedAt;
 
-    public static Trade create(User user, StockSymbol stockSymbol, TradeType tradeType, BigDecimal quantity, BigDecimal price,
-                               String comment, TradeVisibility visibility, LocalDateTime tradedAt, TradeSource source) {
+    public static Trade create(
+            User user,
+            StockSymbol stockSymbol,
+            TradeType tradeType,
+            BigDecimal quantity,
+            BigDecimal price,
+            @Nullable String comment,
+            TradeVisibility visibility,
+            LocalDateTime tradedAt,
+            TradeSource source
+    ) {
         Trade trade = new Trade();
         trade.user = user;
         trade.stockSymbol = stockSymbol;
@@ -99,7 +111,7 @@ public class Trade extends BaseTimeEntity {
         return trade;
     }
 
-    public void updatePresentation(String comment, TradeVisibility visibility) {
+    public void updatePresentation(@Nullable String comment, @Nullable TradeVisibility visibility) {
         if (comment != null) {
             this.comment = comment;
         }

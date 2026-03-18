@@ -2,6 +2,7 @@ package com.folo.auth;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
+import org.springframework.lang.Nullable;
 
 import java.time.Instant;
 import java.util.Map;
@@ -39,7 +40,7 @@ public class InMemoryEmailVerificationStore implements EmailVerificationStore {
         entries.remove(email);
     }
 
-    public String getCode(String email) {
+    public @Nullable String getCode(String email) {
         Entry entry = entries.get(email);
         return entry != null ? entry.code() : null;
     }

@@ -1,11 +1,12 @@
 package com.folo.follow;
 
 import java.util.List;
+import org.springframework.lang.Nullable;
 
 record FollowUserItem(
         Long userId,
         String nickname,
-        String profileImage,
+        @Nullable String profileImage,
         boolean isFollowing
 ) {
 }

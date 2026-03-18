@@ -3,6 +3,7 @@ package com.folo.trade;
 import com.folo.common.api.ApiResponse;
 import com.folo.security.SecurityUtils;
 import jakarta.validation.Valid;
+import org.springframework.lang.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,10 +36,10 @@ public class TradeController {
 
     @GetMapping("/me")
     public ApiResponse<TradeListResponse> myTrades(
-            @RequestParam(required = false) String ticker,
-            @RequestParam(required = false) String tradeType,
-            @RequestParam(required = false) LocalDate from,
-            @RequestParam(required = false) LocalDate to,
+            @Nullable @RequestParam(required = false) String ticker,
+            @Nullable @RequestParam(required = false) String tradeType,
+            @Nullable @RequestParam(required = false) LocalDate from,
+            @Nullable @RequestParam(required = false) LocalDate to,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
