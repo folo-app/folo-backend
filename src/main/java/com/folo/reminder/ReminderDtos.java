@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.lang.Nullable;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -14,10 +15,10 @@ record ReminderItem(
         Long reminderId,
         String ticker,
         String name,
-        BigDecimal amount,
+        @Nullable BigDecimal amount,
         Integer dayOfMonth,
         boolean isActive,
-        String nextReminderDate
+        @Nullable String nextReminderDate
 ) {
 }
 
@@ -29,14 +30,14 @@ record ReminderListResponse(
 record CreateReminderRequest(
         @NotBlank String ticker,
         @NotNull MarketType market,
-        @DecimalMin(value = "0.0", inclusive = false) BigDecimal amount,
+        @Nullable @DecimalMin(value = "0.0", inclusive = false) BigDecimal amount,
         @NotNull @Min(1) @Max(28) Integer dayOfMonth
 ) {
 }
 
 record UpdateReminderRequest(
-        @DecimalMin(value = "0.0", inclusive = false) BigDecimal amount,
-        @Min(1) @Max(28) Integer dayOfMonth,
-        Boolean isActive
+        @Nullable @DecimalMin(value = "0.0", inclusive = false) BigDecimal amount,
+        @Nullable @Min(1) @Max(28) Integer dayOfMonth,
+        @Nullable Boolean isActive
 ) {
 }

@@ -2,18 +2,19 @@ package com.folo.importer;
 
 import java.math.BigDecimal;
 import java.util.List;
+import org.springframework.lang.Nullable;
 
 record ImportPreviewItem(
         Long importResultId,
-        String ticker,
-        String name,
-        String market,
-        String tradeType,
-        BigDecimal quantity,
-        BigDecimal price,
-        String tradedAt,
+        @Nullable String ticker,
+        @Nullable String name,
+        @Nullable String market,
+        @Nullable String tradeType,
+        @Nullable BigDecimal quantity,
+        @Nullable BigDecimal price,
+        @Nullable String tradedAt,
         boolean valid,
-        String errorMessage,
+        @Nullable String errorMessage,
         boolean selected
 ) {
 }
@@ -27,7 +28,7 @@ record CsvImportResponse(
 }
 
 record ConfirmImportRequest(
-        List<Long> importResultIds
+        @Nullable List<Long> importResultIds
 ) {
 }
 
@@ -51,7 +52,7 @@ record OcrImportParsedTrade(
 
 record OcrImportResponse(
         Long importJobId,
-        OcrImportParsedTrade parsed,
+        @Nullable OcrImportParsedTrade parsed,
         double confidence
 ) {
 }

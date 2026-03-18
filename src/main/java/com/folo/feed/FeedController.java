@@ -2,6 +2,7 @@ package com.folo.feed;
 
 import com.folo.common.api.ApiResponse;
 import com.folo.security.SecurityUtils;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,7 +21,7 @@ public class FeedController {
 
     @GetMapping
     public ApiResponse<FeedResponse> feed(
-            @RequestParam(required = false) Long cursor,
+            @Nullable @RequestParam(required = false) Long cursor,
             @RequestParam(defaultValue = "20") int size
     ) {
         return ApiResponse.success(feedService.friendsFeed(SecurityUtils.currentUserId(), cursor, size), "요청이 성공했습니다.");
@@ -29,7 +30,7 @@ public class FeedController {
     @GetMapping("/{userId}")
     public ApiResponse<FeedResponse> userFeed(
             @PathVariable Long userId,
-            @RequestParam(required = false) Long cursor,
+            @Nullable @RequestParam(required = false) Long cursor,
             @RequestParam(defaultValue = "20") int size
     ) {
         return ApiResponse.success(feedService.userFeed(SecurityUtils.currentUserId(), userId, cursor, size), "요청이 성공했습니다.");

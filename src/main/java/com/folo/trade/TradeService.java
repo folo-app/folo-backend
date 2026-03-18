@@ -12,6 +12,7 @@ import com.folo.stock.StockService;
 import com.folo.stock.StockSymbol;
 import com.folo.user.User;
 import com.folo.user.UserRepository;
+import org.springframework.lang.Nullable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,7 +85,15 @@ public class TradeService {
     }
 
     @Transactional(readOnly = true)
-    public TradeListResponse myTrades(Long userId, String ticker, String tradeType, LocalDate from, LocalDate to, int page, int size) {
+    public TradeListResponse myTrades(
+            Long userId,
+            @Nullable String ticker,
+            @Nullable String tradeType,
+            @Nullable LocalDate from,
+            @Nullable LocalDate to,
+            int page,
+            int size
+    ) {
         List<Trade> trades = tradeRepository.findByUserIdAndDeletedFalseOrderByIdDesc(userId, PageRequest.of(page, size + 1));
         List<Trade> filtered = trades.stream()
                 .filter(trade -> ticker == null || trade.getStockSymbol().getTicker().equalsIgnoreCase(ticker))

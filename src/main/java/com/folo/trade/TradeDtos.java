@@ -8,6 +8,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.springframework.lang.Nullable;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -20,15 +21,15 @@ record CreateTradeRequest(
         @NotNull TradeType tradeType,
         @NotNull @DecimalMin(value = "0.000001") BigDecimal quantity,
         @NotNull @DecimalMin(value = "0.0") BigDecimal price,
-        @Size(max = 300) String comment,
+        @Nullable @Size(max = 300) String comment,
         @NotNull TradeVisibility visibility,
-        LocalDateTime tradedAt
+        @Nullable LocalDateTime tradedAt
 ) {
 }
 
 record UpdateTradeRequest(
-        @Size(max = 300) String comment,
-        TradeVisibility visibility
+        @Nullable @Size(max = 300) String comment,
+        @Nullable TradeVisibility visibility
 ) {
 }
 
@@ -40,7 +41,7 @@ record TradeSummaryItem(
         BigDecimal quantity,
         BigDecimal price,
         BigDecimal totalAmount,
-        String comment,
+        @Nullable String comment,
         TradeVisibility visibility,
         long reactionCount,
         long commentCount,
@@ -58,7 +59,7 @@ record TradeListResponse(
 record TradeUserInfo(
         Long userId,
         String nickname,
-        String profileImage
+        @Nullable String profileImage
 ) {
 }
 
@@ -79,7 +80,7 @@ record TradeDetailResponse(
         BigDecimal quantity,
         BigDecimal price,
         BigDecimal totalAmount,
-        String comment,
+        @Nullable String comment,
         TradeVisibility visibility,
         List<ReactionSummary> reactions,
         long commentCount,

@@ -5,7 +5,7 @@ FOLO backend for a social investing app that shares trades and builds long-term 
 ## Stack
 
 - Java 17
-- Spring Boot 3.3
+- Spring Boot 3.5
 - Spring Security + JWT
 - Spring Data JPA
 - Flyway

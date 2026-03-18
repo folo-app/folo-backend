@@ -3,6 +3,7 @@ package com.folo.stock;
 import com.folo.common.enums.MarketType;
 import com.folo.common.exception.ApiException;
 import com.folo.common.exception.ErrorCode;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +22,7 @@ public class StockService {
     }
 
     @Transactional(readOnly = true)
-    public StockSearchResponse search(String q, String market) {
+    public StockSearchResponse search(@Nullable String q, @Nullable String market) {
         if (q == null || q.trim().length() < 2) {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "검색어는 2자 이상이어야 합니다.");
         }

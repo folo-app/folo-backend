@@ -2,6 +2,7 @@ package com.folo.security;
 
 import com.folo.config.FieldEncryptionProperties;
 import org.springframework.stereotype.Component;
+import org.springframework.lang.Nullable;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
@@ -31,7 +32,7 @@ public class FieldEncryptor {
         }
     }
 
-    public String encrypt(String plainText) {
+    public @Nullable String encrypt(@Nullable String plainText) {
         if (plainText == null) {
             return null;
         }
@@ -50,7 +51,7 @@ public class FieldEncryptor {
         }
     }
 
-    public String decrypt(String cipherText) {
+    public @Nullable String decrypt(@Nullable String cipherText) {
         if (cipherText == null) {
             return null;
         }

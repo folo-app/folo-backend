@@ -2,18 +2,19 @@ package com.folo.portfolio;
 
 import java.math.BigDecimal;
 import java.util.List;
+import org.springframework.lang.Nullable;
 
 record PortfolioHoldingItem(
         Long holdingId,
         String ticker,
         String name,
         String market,
-        BigDecimal quantity,
-        BigDecimal avgPrice,
+        @Nullable BigDecimal quantity,
+        @Nullable BigDecimal avgPrice,
         BigDecimal currentPrice,
-        BigDecimal totalInvested,
-        BigDecimal totalValue,
-        BigDecimal returnAmount,
+        @Nullable BigDecimal totalInvested,
+        @Nullable BigDecimal totalValue,
+        @Nullable BigDecimal returnAmount,
         BigDecimal returnRate,
         BigDecimal weight
 ) {
@@ -21,14 +22,14 @@ record PortfolioHoldingItem(
 
 record PortfolioResponse(
         Long portfolioId,
-        BigDecimal totalInvested,
-        BigDecimal totalValue,
-        BigDecimal totalReturn,
+        @Nullable BigDecimal totalInvested,
+        @Nullable BigDecimal totalValue,
+        @Nullable BigDecimal totalReturn,
         BigDecimal totalReturnRate,
-        BigDecimal dayReturn,
+        @Nullable BigDecimal dayReturn,
         BigDecimal dayReturnRate,
         List<PortfolioHoldingItem> holdings,
-        String syncedAt,
-        Boolean isFullyVisible
+        @Nullable String syncedAt,
+        boolean isFullyVisible
 ) {
 }

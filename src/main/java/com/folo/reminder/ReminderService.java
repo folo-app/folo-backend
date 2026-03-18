@@ -6,6 +6,7 @@ import com.folo.stock.StockService;
 import com.folo.stock.StockSymbol;
 import com.folo.user.User;
 import com.folo.user.UserRepository;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -100,7 +101,7 @@ public class ReminderService {
         );
     }
 
-    private LocalDate nextReminderDate(Integer dayOfMonth, boolean active) {
+    private @Nullable LocalDate nextReminderDate(Integer dayOfMonth, boolean active) {
         if (!active) {
             return null;
         }

@@ -4,6 +4,7 @@ import com.folo.common.exception.ApiException;
 import com.folo.common.exception.ErrorCode;
 import com.folo.follow.SocialRelationService;
 import com.folo.security.FieldEncryptor;
+import org.springframework.lang.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -96,7 +97,7 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public UserSearchResponse search(Long currentUserId, String q, int page, int size) {
+    public UserSearchResponse search(Long currentUserId, @Nullable String q, int page, int size) {
         if (q == null || q.trim().length() < 2) {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "검색어는 2자 이상이어야 합니다.");
         }

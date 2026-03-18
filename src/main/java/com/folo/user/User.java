@@ -16,6 +16,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.lang.Nullable;
 
 import java.time.LocalDateTime;
 
@@ -40,9 +41,11 @@ public class User extends BaseTimeEntity {
     private String nickname;
 
     @Column(length = 500)
+    @Nullable
     private String bio;
 
     @Column(length = 1000)
+    @Nullable
     private String profileImageUrl;
 
     @Enumerated(EnumType.STRING)
@@ -56,15 +59,18 @@ public class User extends BaseTimeEntity {
     @Column(nullable = false)
     private boolean active;
 
+    @Nullable
     private LocalDateTime withdrawnAt;
 
     @Column(length = 255)
+    @Nullable
     private String kisAppKeyEncrypted;
 
     @Column(length = 255)
+    @Nullable
     private String kisAppSecretEncrypted;
 
-    public User(String handle, String nickname, String profileImageUrl) {
+    public User(String handle, String nickname, @Nullable String profileImageUrl) {
         this.handle = handle;
         this.nickname = nickname;
         this.profileImageUrl = profileImageUrl;
@@ -73,8 +79,13 @@ public class User extends BaseTimeEntity {
         this.active = true;
     }
 
-    public void updateProfile(String nickname, String profileImageUrl, String bio,
-                              PortfolioVisibility portfolioVisibility, ReturnVisibility returnVisibility) {
+    public void updateProfile(
+            @Nullable String nickname,
+            @Nullable String profileImageUrl,
+            @Nullable String bio,
+            @Nullable PortfolioVisibility portfolioVisibility,
+            @Nullable ReturnVisibility returnVisibility
+    ) {
         if (nickname != null) {
             this.nickname = nickname;
         }
