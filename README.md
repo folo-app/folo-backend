@@ -59,6 +59,14 @@ docker compose up -d
 ./gradlew bootRun
 ```
 
+- `bootRun` defaults to the `local` profile.
+- The local profile uses `localhost:55432` for PostgreSQL and `localhost:56379` for Redis to avoid conflicts with other projects.
+- If you need a different profile, override it explicitly:
+
+```bash
+SPRING_PROFILES_ACTIVE=default ./gradlew bootRun
+```
+
 3. Open Swagger:
 
 - `http://localhost:8080/api/swagger-ui.html`
