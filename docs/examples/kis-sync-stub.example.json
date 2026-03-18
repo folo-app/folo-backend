@@ -1,0 +1,22 @@
+[
+  {
+    "ticker": "AAPL",
+    "market": "NASDAQ",
+    "tradeType": "BUY",
+    "quantity": 3,
+    "price": 189.30,
+    "comment": "kis sync sample",
+    "visibility": "PRIVATE",
+    "tradedAt": "2025-03-12T22:15:00"
+  },
+  {
+    "ticker": "005930",
+    "market": "KRX",
+    "tradeType": "BUY",
+    "quantity": 10,
+    "price": 74200,
+    "comment": "monthly samsung buy",
+    "visibility": "FRIENDS_ONLY",
+    "tradedAt": "2025-03-13T09:10:00"
+  }
+]
