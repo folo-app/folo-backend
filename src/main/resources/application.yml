@@ -1,6 +1,19 @@
 spring:
   application:
     name: folo-backend
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS_ENABLE:false}
+          ssl:
+            enable: ${MAIL_SMTP_SSL_ENABLE:true}
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/folo}
     username: ${DB_USERNAME:folo}
@@ -30,6 +43,14 @@ server:
   servlet:
     context-path: /api
 
+app:
+  email:
+    smtp-enabled: ${MAIL_ENABLED:false}
+    from-address: ${MAIL_FROM_ADDRESS:no-reply@example.com}
+    from-name: ${MAIL_FROM_NAME:Folo}
+  storage:
+    upload-root-dir: ${FILE_STORAGE_ROOT_DIR:/tmp/folo-uploads}
+
 management:
   endpoints:
     web:
@@ -53,7 +74,7 @@ integration:
     stub-file: ${KIS_STUB_FILE:}
     oauth:
       enabled: ${KIS_OAUTH_ENABLED:false}
-      base-url: ${KIS_BASE_URL:http://210.107.75.78:9443}
+      base-url: ${KIS_OAUTH_BASE_URL:${KIS_BASE_URL:http://210.107.75.78:9443}}
       app-key: ${KIS_APP_KEY:}
       app-secret: ${KIS_APP_SECRET:}
       redirect-uri: ${KIS_REDIRECT_URI:}
@@ -62,16 +83,25 @@ integration:
       contract-type: ${KIS_CONTRACT_TYPE:4}
   market-data:
     enabled: ${MARKET_DATA_SYNC_ENABLED:false}
+    run-on-startup: ${MARKET_DATA_SYNC_RUN_ON_STARTUP:false}
     master-cron: ${MARKET_DATA_MASTER_CRON:0 0 4 * * *}
     zone: ${MARKET_DATA_SYNC_ZONE:Asia/Seoul}
     batch-size: ${MARKET_DATA_BATCH_SIZE:500}
+    twelve-data:
+      logo-enabled: ${TWELVE_DATA_LOGO_ENABLED:false}
+      api-key: ${TWELVE_DATA_API_KEY:}
+      base-url: ${TWELVE_DATA_BASE_URL:https://api.twelvedata.com}
     polygon:
-      enabled: ${POLYGON_MASTER_ENABLED:false}
+      logo-enabled: ${POLYGON_LOGO_ENABLED:${POLYGON_MASTER_ENABLED:false}}
       api-key: ${POLYGON_API_KEY:}
       base-url: ${POLYGON_BASE_URL:https://api.polygon.io}
     kis:
-      enabled: ${KIS_MASTER_ENABLED:false}
-      master-file-url: ${KIS_MASTER_FILE_URL:}
+      enabled: ${KIS_MARKET_DATA_ENABLED:${KIS_MASTER_ENABLED:false}}
+      base-url: ${KIS_API_BASE_URL:https://openapi.koreainvestment.com:9443}
+      app-key: ${KIS_APP_KEY:}
+      app-secret: ${KIS_APP_SECRET:}
+      domestic-master-file-url: ${KIS_DOMESTIC_MASTER_FILE_URL:${KIS_MASTER_FILE_URL:}}
+      overseas-master-file-url: ${KIS_OVERSEAS_MASTER_FILE_URL:}
 
 springdoc:
   swagger-ui:

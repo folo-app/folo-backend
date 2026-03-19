@@ -7,7 +7,9 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties({
         JwtProperties.class,
         EmailVerificationProperties.class,
+        AppEmailProperties.class,
         FieldEncryptionProperties.class,
+        FileStorageProperties.class,
         KisStubProperties.class,
         KisOAuthProperties.class,
         MarketDataSyncProperties.class
