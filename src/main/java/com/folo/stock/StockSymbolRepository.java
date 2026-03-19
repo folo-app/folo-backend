@@ -17,4 +17,6 @@ public interface StockSymbolRepository extends JpaRepository<StockSymbol, Long> 
     List<StockSymbol> findTop20ByMarketAndNameContainingIgnoreCaseOrMarketAndTickerContainingIgnoreCase(
             MarketType market1, String nameQuery, MarketType market2, String tickerQuery
     );
+
+    List<StockSymbol> findAllBySourceProviderAndMarket(StockDataProvider sourceProvider, MarketType market);
 }

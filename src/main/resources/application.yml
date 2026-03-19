@@ -51,6 +51,18 @@ security:
 integration:
   kis:
     stub-file: ${KIS_STUB_FILE:}
+  market-data:
+    enabled: ${MARKET_DATA_SYNC_ENABLED:false}
+    master-cron: ${MARKET_DATA_MASTER_CRON:0 0 4 * * *}
+    zone: ${MARKET_DATA_SYNC_ZONE:Asia/Seoul}
+    batch-size: ${MARKET_DATA_BATCH_SIZE:500}
+    polygon:
+      enabled: ${POLYGON_MASTER_ENABLED:false}
+      api-key: ${POLYGON_API_KEY:}
+      base-url: ${POLYGON_BASE_URL:https://api.polygon.io}
+    kis:
+      enabled: ${KIS_MASTER_ENABLED:false}
+      master-file-url: ${KIS_MASTER_FILE_URL:}
 
 springdoc:
   swagger-ui:

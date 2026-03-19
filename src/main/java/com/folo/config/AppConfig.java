@@ -8,7 +8,8 @@ import org.springframework.context.annotation.Configuration;
         JwtProperties.class,
         EmailVerificationProperties.class,
         FieldEncryptionProperties.class,
-        KisStubProperties.class
+        KisStubProperties.class,
+        MarketDataSyncProperties.class
 })
 public class AppConfig {
 }

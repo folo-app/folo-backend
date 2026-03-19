@@ -1,0 +1,4 @@
+ticker,name,assetType,primaryExchangeCode,currencyCode,sourceIdentifier,active
+005930,삼성전자,STOCK,XKRX,KRW,005930,true
+000660,SK하이닉스,STOCK,XKRX,KRW,000660,true
+105560,KB금융,STOCK,XKRX,KRW,105560,true

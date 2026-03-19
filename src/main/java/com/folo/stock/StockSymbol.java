@@ -18,6 +18,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @Entity
@@ -50,4 +52,20 @@ public class StockSymbol extends BaseTimeEntity {
 
     @Column(nullable = false)
     private boolean active;
+
+    @Column(length = 20)
+    private String primaryExchangeCode;
+
+    @Column(length = 10)
+    private String currencyCode;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private StockDataProvider sourceProvider;
+
+    @Column(length = 100)
+    private String sourceIdentifier;
+
+    @Column
+    private LocalDateTime lastMasterSyncedAt;
 }
