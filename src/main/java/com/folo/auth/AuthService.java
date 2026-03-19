@@ -15,6 +15,7 @@ import com.folo.security.FoloUserPrincipal;
 import com.folo.security.JwtTokenProvider;
 import com.folo.user.User;
 import com.folo.user.UserRepository;
+import io.jsonwebtoken.JwtException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -87,7 +88,7 @@ public class AuthService {
         return new SignupResponse(user.getId(), user.getNickname(), request.email(), true);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse login(LoginRequest request) {
         UserAuthIdentity identity = userAuthIdentityRepository.findByProviderAndProviderUserId(AuthProvider.EMAIL, request.email())
                 .orElseThrow(() -> new ApiException(ErrorCode.INVALID_CREDENTIALS));
@@ -143,7 +144,13 @@ public class AuthService {
 
     @Transactional
     public AuthResponse refresh(RefreshRequest request) {
-        String type = jwtTokenProvider.parse(request.refreshToken()).get("type", String.class);
+        String type;
+        try {
+            type = jwtTokenProvider.parse(request.refreshToken()).get("type", String.class);
+        } catch (JwtException | IllegalArgumentException exception) {
+            throw new ApiException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
         if (!"refresh".equals(type)) {
             throw new ApiException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
