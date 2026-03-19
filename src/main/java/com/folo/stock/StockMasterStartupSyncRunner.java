@@ -33,7 +33,11 @@ public class StockMasterStartupSyncRunner {
         }
 
         log.info("stock master startup sync started");
-        stockMasterSyncService.syncAll();
-        log.info("stock master startup sync completed");
+        try {
+            stockMasterSyncService.syncAll();
+            log.info("stock master startup sync completed");
+        } catch (RuntimeException exception) {
+            log.error("stock master startup sync failed; continuing application startup", exception);
+        }
     }
 }

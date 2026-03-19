@@ -3,6 +3,7 @@ package com.folo.stock;
 import com.folo.common.enums.AssetType;
 import com.folo.common.enums.MarketType;
 import com.folo.config.MarketDataSyncProperties;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Component
 public class KisStockMasterFileSyncProvider implements StockMasterSyncProvider {
 
@@ -39,7 +41,24 @@ public class KisStockMasterFileSyncProvider implements StockMasterSyncProvider {
 
     @Override
     public boolean supports(MarketType market) {
-        return properties.kis().enabled() && StringUtils.hasText(resolveSource(market));
+        if (!properties.kis().enabled()) {
+            return false;
+        }
+
+        String source = resolveSource(market);
+        if (!StringUtils.hasText(source)) {
+            return false;
+        }
+
+        if (isRemoteSource(source)) {
+            return true;
+        }
+
+        boolean exists = Files.exists(Path.of(source));
+        if (!exists) {
+            log.warn("KIS stock master sync skipped for {} because source file does not exist: {}", market, source);
+        }
+        return exists;
     }
 
     @Override
@@ -117,11 +136,15 @@ public class KisStockMasterFileSyncProvider implements StockMasterSyncProvider {
     }
 
     private Reader openReader(String source) throws IOException {
-        if (source.startsWith("http://") || source.startsWith("https://")) {
+        if (isRemoteSource(source)) {
             return new InputStreamReader(URI.create(source).toURL().openStream(), StandardCharsets.UTF_8);
         }
 
         return Files.newBufferedReader(Path.of(source), StandardCharsets.UTF_8);
+    }
+
+    private boolean isRemoteSource(String source) {
+        return source.startsWith("http://") || source.startsWith("https://");
     }
 
     private AssetType parseAssetType(CSVRecord record) {
