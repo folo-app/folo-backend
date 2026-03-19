@@ -88,3 +88,14 @@
 - Twelve Data는 `TWELVE_DATA_LOGO_ENABLED=true`일 때 로고 조회에 사용한다.
 - 미국 종목은 Twelve Data 실패 시 `POLYGON_LOGO_ENABLED=true`일 경우 Polygon fallback이 동작한다.
 - KIS만으로는 국내/해외 회사 로고를 전부 해결할 수 없다.
+
+## 관련 문서
+
+- 국내 원본 종목정보파일 정규화:
+  `docs/kis-domestic-master-normalization.md`
+- 미국장 마스터 CSV 스키마와 생성 절차:
+  `docs/us-master-schema.md`
+- 국내 CSV 예시:
+  `docs/examples/kis-stock-master.sample.csv`
+- 미국장 CSV 예시:
+  `docs/examples/kis-overseas-master.sample.csv`
