@@ -1,0 +1,4 @@
+ticker,name,market,assetType,primaryExchangeCode,currencyCode,sourceIdentifier,active
+AAPL,Apple Inc.,NASDAQ,STOCK,NAS,USD,AAPL,true
+NVDA,NVIDIA Corporation,NASDAQ,STOCK,NAS,USD,NVDA,true
+VOO,Vanguard S&P 500 ETF,NYSE,ETF,NYS,USD,VOO,true

@@ -33,12 +33,12 @@ public class PolygonStockMasterSyncProvider implements StockMasterSyncProvider {
 
     @Override
     public boolean isConfigured() {
-        return properties.polygon().enabled() && StringUtils.hasText(properties.polygon().apiKey());
+        return false;
     }
 
     @Override
     public boolean supports(MarketType market) {
-        return market == MarketType.NASDAQ || market == MarketType.NYSE || market == MarketType.AMEX;
+        return false;
     }
 
     @Override

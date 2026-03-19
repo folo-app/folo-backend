@@ -5,14 +5,23 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "integration.market-data")
 public record MarketDataSyncProperties(
         boolean enabled,
+        boolean runOnStartup,
         String masterCron,
         String zone,
         int batchSize,
+        TwelveData twelveData,
         Polygon polygon,
         Kis kis
 ) {
+    public record TwelveData(
+            boolean logoEnabled,
+            String apiKey,
+            String baseUrl
+    ) {
+    }
+
     public record Polygon(
-            boolean enabled,
+            boolean logoEnabled,
             String apiKey,
             String baseUrl
     ) {
@@ -20,7 +29,11 @@ public record MarketDataSyncProperties(
 
     public record Kis(
             boolean enabled,
-            String masterFileUrl
+            String baseUrl,
+            String appKey,
+            String appSecret,
+            String domesticMasterFileUrl,
+            String overseasMasterFileUrl
     ) {
     }
 }

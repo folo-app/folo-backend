@@ -9,6 +9,7 @@ record StockSearchItem(
         String ticker,
         String name,
         MarketType market,
+        String logoUrl,
         BigDecimal currentPrice,
         BigDecimal dayReturnRate
 ) {
@@ -16,6 +17,12 @@ record StockSearchItem(
 
 record StockSearchResponse(
         List<StockSearchItem> stocks
+) {
+}
+
+record StockDiscoverResponse(
+        List<StockSearchItem> krxStocks,
+        List<StockSearchItem> usStocks
 ) {
 }
 
