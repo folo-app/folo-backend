@@ -77,6 +77,7 @@ SPRING_PROFILES_ACTIVE=default ./gradlew bootRun
 - `docs/Folo.postman_collection.json`
 - `docs/response-shape-guide.md`
 - `docs/api-contract-review.md`
+- `docs/kis-oauth-connection-draft.md`
 
 ## Test
 
@@ -90,6 +91,7 @@ SPRING_PROFILES_ACTIVE=default ./gradlew bootRun
 - Test profile uses H2 in PostgreSQL compatibility mode because the current local environment does not have a running Docker daemon for Testcontainers.
 - Redis-backed email verification is used outside the test profile; the test profile uses an in-memory verification store.
 - `KIS_STUB_FILE=docs/examples/kis-sync-stub.example.json` can be used for local sync testing.
+- `docs/kis-oauth-connection-draft.md` documents the planned production flow that replaces user-entered KIS app keys.
 - `docs/examples/trades.sample.csv` can be used for CSV import testing.
 - OCR import is currently a filename-based stub. Example filename:
   - `005930_KRX_BUY_10_74200_20250312101500.png`
