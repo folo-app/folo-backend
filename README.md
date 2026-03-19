@@ -61,6 +61,7 @@ docker compose up -d
 
 - `bootRun` defaults to the `local` profile.
 - The local profile uses `localhost:55432` for PostgreSQL and `localhost:56379` for Redis to avoid conflicts with other projects.
+- Local startup does not require stock master sync files. If market-data startup sync is enabled but a local KIS master file is missing, the app now logs the sync failure and continues booting.
 - If you need a different profile, override it explicitly:
 
 ```bash

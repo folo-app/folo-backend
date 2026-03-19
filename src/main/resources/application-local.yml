@@ -8,3 +8,7 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:56379}
 
+integration:
+  market-data:
+    enabled: ${MARKET_DATA_SYNC_ENABLED:false}
+    run-on-startup: ${MARKET_DATA_SYNC_RUN_ON_STARTUP:false}
