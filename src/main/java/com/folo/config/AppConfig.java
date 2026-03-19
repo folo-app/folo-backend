@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
         EmailVerificationProperties.class,
         FieldEncryptionProperties.class,
         KisStubProperties.class,
+        KisOAuthProperties.class,
         MarketDataSyncProperties.class
 })
 public class AppConfig {

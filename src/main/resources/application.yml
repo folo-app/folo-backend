@@ -51,6 +51,15 @@ security:
 integration:
   kis:
     stub-file: ${KIS_STUB_FILE:}
+    oauth:
+      enabled: ${KIS_OAUTH_ENABLED:false}
+      base-url: ${KIS_BASE_URL:http://210.107.75.78:9443}
+      app-key: ${KIS_APP_KEY:}
+      app-secret: ${KIS_APP_SECRET:}
+      redirect-uri: ${KIS_REDIRECT_URI:}
+      corp-no: ${KIS_CORP_NO:}
+      corp-name: ${KIS_CORP_NAME:Folo}
+      contract-type: ${KIS_CONTRACT_TYPE:4}
   market-data:
     enabled: ${MARKET_DATA_SYNC_ENABLED:false}
     master-cron: ${MARKET_DATA_MASTER_CRON:0 0 4 * * *}

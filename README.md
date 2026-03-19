@@ -92,6 +92,14 @@ SPRING_PROFILES_ACTIVE=default ./gradlew bootRun
 - Redis-backed email verification is used outside the test profile; the test profile uses an in-memory verification store.
 - `KIS_STUB_FILE=docs/examples/kis-sync-stub.example.json` can be used for local sync testing.
 - `docs/kis-oauth-connection-draft.md` documents the planned production flow that replaces user-entered KIS app keys.
+- KIS OAuth skeleton env:
+  - `KIS_OAUTH_ENABLED=true`
+  - `KIS_BASE_URL=http://210.107.75.78:9443`
+  - `KIS_APP_KEY=...`
+  - `KIS_APP_SECRET=...`
+  - `KIS_REDIRECT_URI=https://...`
+  - `KIS_CORP_NO=...`
+  - `KIS_CORP_NAME=...`
 - `docs/examples/trades.sample.csv` can be used for CSV import testing.
 - OCR import is currently a filename-based stub. Example filename:
   - `005930_KRX_BUY_10_74200_20250312101500.png`
