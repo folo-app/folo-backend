@@ -10,6 +10,7 @@ public record KisOAuthProperties(
         @Nullable String appKey,
         @Nullable String appSecret,
         @Nullable String redirectUri,
+        @Nullable String appRedirectUrl,
         @Nullable String corpNo,
         @Nullable String corpName,
         @Nullable String contractType
