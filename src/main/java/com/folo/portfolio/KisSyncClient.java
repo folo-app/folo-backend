@@ -4,5 +4,5 @@ import java.util.List;
 
 public interface KisSyncClient {
 
-    List<KisSyncTradePayload> syncTrades(String kisAppKey, String kisAppSecret);
+    List<KisSyncTradePayload> syncTrades(KisSyncSession session);
 }

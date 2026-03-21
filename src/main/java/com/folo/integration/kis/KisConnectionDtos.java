@@ -1,8 +1,15 @@
 package com.folo.integration.kis;
 
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.lang.Nullable;
 
 import java.util.Map;
+
+record KisConnectionStartRequest(
+        @NotBlank String customerName,
+        @NotBlank String phoneNumber
+) {
+}
 
 record KisConnectionStatusResponse(
         boolean connected,
@@ -11,6 +18,8 @@ record KisConnectionStatusResponse(
         boolean clientConfigured,
         boolean connectionAvailable,
         @Nullable String lastSyncedAt,
+        @Nullable String connectedAt,
+        @Nullable String connectedAccount,
         String nextStep
 ) {
 }
@@ -19,6 +28,7 @@ record KisConnectionStartResponse(
         boolean started,
         String phase,
         @Nullable String authorizationUrl,
+        @Nullable String launchUrl,
         @Nullable String authorizationMethod,
         @Nullable Map<String, String> requestFields,
         @Nullable String state,

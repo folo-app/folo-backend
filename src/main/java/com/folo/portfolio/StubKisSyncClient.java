@@ -22,7 +22,7 @@ public class StubKisSyncClient implements KisSyncClient {
     }
 
     @Override
-    public List<KisSyncTradePayload> syncTrades(String kisAppKey, String kisAppSecret) {
+    public List<KisSyncTradePayload> syncTrades(KisSyncSession session) {
         try {
             if (kisStubProperties.stubFile() == null || kisStubProperties.stubFile().isBlank()) {
                 return Collections.emptyList();

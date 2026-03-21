@@ -54,22 +54,28 @@ public class SecurityConfig {
                                 "/api/auth/email/verify",
                                 "/api/auth/email/confirm",
                                 "/api/uploads/profile-image",
+                                "/api/integrations/kis/connect/callback",
                                 "/auth/signup",
                                 "/auth/login",
                                 "/auth/refresh",
                                 "/auth/email/verify",
                                 "/auth/email/confirm",
-                                "/uploads/profile-image"
+                                "/uploads/profile-image",
+                                "/integrations/kis/connect/callback"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/stocks/search",
                                 "/api/stocks/discover",
                                 "/api/stocks/*/logo",
                                 "/api/stocks/*/price",
+                                "/api/integrations/kis/connect/authorize",
+                                "/api/integrations/kis/connect/callback",
                                 "/stocks/search",
                                 "/stocks/discover",
                                 "/stocks/*/logo",
-                                "/stocks/*/price"
+                                "/stocks/*/price",
+                                "/integrations/kis/connect/authorize",
+                                "/integrations/kis/connect/callback"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
