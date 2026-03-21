@@ -14,5 +14,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByIdAndActiveTrue(Long id);
 
+    Optional<User> findByNicknameAndActiveTrue(String nickname);
+
     Page<User> findByNicknameContainingIgnoreCaseAndActiveTrue(String nickname, Pageable pageable);
 }

@@ -55,6 +55,24 @@ public class AuthController {
         return ApiResponse.success(authService.confirmEmail(request), "이메일 인증이 완료되었습니다.");
     }
 
+    @PostMapping("/account/recover-id")
+    public ApiResponse<Void> recoverLoginId(@Valid @RequestBody RecoverLoginIdRequest request) {
+        authService.recoverLoginId(request);
+        return ApiResponse.successMessage("가입 정보가 있으면 등록된 이메일로 로그인 아이디 안내를 보냈습니다.");
+    }
+
+    @PostMapping("/password/reset/request")
+    public ApiResponse<Void> requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
+        authService.requestPasswordReset(request);
+        return ApiResponse.successMessage("가입 정보가 있으면 비밀번호 재설정 코드를 발송했습니다.");
+    }
+
+    @PostMapping("/password/reset/confirm")
+    public ApiResponse<Void> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest request) {
+        authService.confirmPasswordReset(request);
+        return ApiResponse.successMessage("비밀번호가 재설정되었습니다. 새 비밀번호로 로그인해 주세요.");
+    }
+
     @DeleteMapping("/withdraw")
     public ApiResponse<Void> withdraw() {
         authService.withdraw(SecurityUtils.currentUserId());

@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 public class AuthService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
+    private static final String PASSWORD_RESET_KEY_PREFIX = "password-reset:";
 
     private final UserRepository userRepository;
     private final UserAuthIdentityRepository userAuthIdentityRepository;
@@ -143,6 +144,60 @@ public class AuthService {
     }
 
     @Transactional
+    public void recoverLoginId(RecoverLoginIdRequest request) {
+        String nickname = request.nickname().trim();
+        userRepository.findByNicknameAndActiveTrue(nickname)
+                .flatMap(user -> userAuthIdentityRepository.findByUserIdAndProvider(user.getId(), AuthProvider.EMAIL))
+                .filter(UserAuthIdentity::isEmailVerified)
+                .filter(identity -> identity.getEmail() != null && !identity.getEmail().isBlank())
+                .ifPresent(identity -> emailSender.sendAccountIdReminder(identity.getEmail(), identity.getEmail()));
+    }
+
+    @Transactional
+    public void requestPasswordReset(PasswordResetRequest request) {
+        String normalizedEmail = request.email().trim().toLowerCase();
+        String resetStoreKey = passwordResetStoreKey(normalizedEmail);
+
+        UserAuthIdentity identity = userAuthIdentityRepository.findByEmail(normalizedEmail)
+                .filter(UserAuthIdentity::isEmailVerified)
+                .orElse(null);
+
+        if (identity == null || !identity.getUser().isActive()) {
+            return;
+        }
+        if (emailVerificationStore.isResendBlocked(resetStoreKey)) {
+            throw new ApiException(ErrorCode.VERIFICATION_RESEND_TOO_SOON, "비밀번호 재설정 코드는 잠시 후 다시 요청해 주세요.");
+        }
+
+        String code = generateCode();
+        emailVerificationStore.save(
+                resetStoreKey,
+                code,
+                emailVerificationProperties.ttlSeconds(),
+                emailVerificationProperties.resendCooldownSeconds()
+        );
+        emailSender.sendPasswordResetCode(normalizedEmail, code);
+    }
+
+    @Transactional
+    public void confirmPasswordReset(PasswordResetConfirmRequest request) {
+        String normalizedEmail = request.email().trim().toLowerCase();
+        String resetStoreKey = passwordResetStoreKey(normalizedEmail);
+        UserAuthIdentity identity = userAuthIdentityRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "이메일 계정을 찾을 수 없습니다."));
+
+        if (!emailVerificationStore.matches(resetStoreKey, request.code().trim())) {
+            throw new ApiException(ErrorCode.INVALID_VERIFICATION_CODE, "재설정 코드가 올바르지 않습니다.");
+        }
+
+        validatePassword(request.newPassword());
+        identity.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        refreshTokenRepository.findByUserIdAndRevokedAtIsNull(identity.getUser().getId())
+                .forEach(RefreshToken::revoke);
+        emailVerificationStore.clear(resetStoreKey);
+    }
+
+    @Transactional
     public AuthResponse refresh(RefreshRequest request) {
         String type;
         try {
@@ -243,5 +298,9 @@ public class AuthService {
     private String generateCode() {
         int value = RANDOM.nextInt(900_000) + 100_000;
         return Integer.toString(value);
+    }
+
+    private String passwordResetStoreKey(String email) {
+        return PASSWORD_RESET_KEY_PREFIX + email;
     }
 }

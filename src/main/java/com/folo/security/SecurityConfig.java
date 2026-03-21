@@ -53,6 +53,9 @@ public class SecurityConfig {
                                 "/api/auth/refresh",
                                 "/api/auth/email/verify",
                                 "/api/auth/email/confirm",
+                                "/api/auth/account/recover-id",
+                                "/api/auth/password/reset/request",
+                                "/api/auth/password/reset/confirm",
                                 "/api/uploads/profile-image",
                                 "/api/integrations/kis/connect/callback",
                                 "/auth/signup",
@@ -60,6 +63,9 @@ public class SecurityConfig {
                                 "/auth/refresh",
                                 "/auth/email/verify",
                                 "/auth/email/confirm",
+                                "/auth/account/recover-id",
+                                "/auth/password/reset/request",
+                                "/auth/password/reset/confirm",
                                 "/uploads/profile-image",
                                 "/integrations/kis/connect/callback"
                         ).permitAll()
