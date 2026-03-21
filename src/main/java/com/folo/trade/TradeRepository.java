@@ -33,6 +33,26 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
     Page<Trade> findByUserIdAndDeletedFalseAndTradedAtBetween(Long userId, LocalDateTime from, LocalDateTime to, Pageable pageable);
 
     @Query("""
+            select t
+            from Trade t
+            where t.user.id = :userId
+              and t.deleted = false
+              and (:ticker is null or lower(t.stockSymbol.ticker) = lower(:ticker))
+              and (:tradeType is null or t.tradeType = :tradeType)
+              and (:from is null or t.tradedAt >= :from)
+              and (:toExclusive is null or t.tradedAt < :toExclusive)
+            order by t.id desc
+            """)
+    Page<Trade> searchMyTrades(
+            @Param("userId") Long userId,
+            @Param("ticker") String ticker,
+            @Param("tradeType") TradeType tradeType,
+            @Param("from") LocalDateTime from,
+            @Param("toExclusive") LocalDateTime toExclusive,
+            Pageable pageable
+    );
+
+    @Query("""
             select t.stockSymbol.id
             from Trade t
             where t.deleted = false

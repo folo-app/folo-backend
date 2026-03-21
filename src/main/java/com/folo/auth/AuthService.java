@@ -146,7 +146,7 @@ public class AuthService {
     public AuthResponse refresh(RefreshRequest request) {
         String type;
         try {
-            type = jwtTokenProvider.parse(request.refreshToken()).get("type", String.class);
+            type = jwtTokenProvider.getTokenType(request.refreshToken());
         } catch (JwtException | IllegalArgumentException exception) {
             throw new ApiException(ErrorCode.INVALID_REFRESH_TOKEN);
         }

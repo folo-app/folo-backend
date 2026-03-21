@@ -3,6 +3,7 @@ package com.folo.trade;
 import com.folo.comment.CommentRepository;
 import com.folo.common.enums.ReactionEmoji;
 import com.folo.common.enums.TradeSource;
+import com.folo.common.enums.TradeType;
 import com.folo.common.exception.ApiException;
 import com.folo.common.exception.ErrorCode;
 import com.folo.portfolio.PortfolioProjectionService;
@@ -13,6 +14,7 @@ import com.folo.stock.StockSymbol;
 import com.folo.user.User;
 import com.folo.user.UserRepository;
 import org.springframework.lang.Nullable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,10 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -94,18 +94,24 @@ public class TradeService {
             int page,
             int size
     ) {
-        List<Trade> trades = tradeRepository.findByUserIdAndDeletedFalseOrderByIdDesc(userId, PageRequest.of(page, size + 1));
-        List<Trade> filtered = trades.stream()
-                .filter(trade -> ticker == null || trade.getStockSymbol().getTicker().equalsIgnoreCase(ticker))
-                .filter(trade -> tradeType == null || trade.getTradeType().name().equalsIgnoreCase(tradeType))
-                .filter(trade -> from == null || !trade.getTradedAt().toLocalDate().isBefore(from))
-                .filter(trade -> to == null || !trade.getTradedAt().toLocalDate().isAfter(to))
-                .sorted(Comparator.comparing(Trade::getId).reversed())
-                .toList();
+        TradeType requestedTradeType = parseTradeType(tradeType);
+        String requestedTicker = normalizeTicker(ticker);
+        LocalDateTime fromDateTime = from != null ? from.atStartOfDay() : null;
+        LocalDateTime toExclusive = to != null ? to.plusDays(1).atStartOfDay() : null;
 
-        boolean hasNext = filtered.size() > size;
-        List<TradeSummaryItem> items = filtered.stream().limit(size).map(this::toSummary).toList();
-        return new TradeListResponse(items, filtered.size(), hasNext);
+        Page<Trade> trades = tradeRepository.searchMyTrades(
+                userId,
+                requestedTicker,
+                requestedTradeType,
+                fromDateTime,
+                toExclusive,
+                PageRequest.of(page, size)
+        );
+
+        List<TradeSummaryItem> items = trades.getContent().stream()
+                .map(this::toSummary)
+                .toList();
+        return new TradeListResponse(items, trades.getTotalElements(), trades.hasNext());
     }
 
     @Transactional(readOnly = true)
@@ -184,5 +190,24 @@ public class TradeService {
                 commentRepository.countByTradeIdAndDeletedFalse(trade.getId()),
                 trade.getTradedAt().toString()
         );
+    }
+
+    private @Nullable TradeType parseTradeType(@Nullable String tradeType) {
+        if (tradeType == null || tradeType.isBlank()) {
+            return null;
+        }
+
+        try {
+            return TradeType.valueOf(tradeType.trim().toUpperCase());
+        } catch (IllegalArgumentException exception) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "지원하지 않는 tradeType 입니다.");
+        }
+    }
+
+    private @Nullable String normalizeTicker(@Nullable String ticker) {
+        if (ticker == null || ticker.isBlank()) {
+            return null;
+        }
+        return ticker.trim();
     }
 }
