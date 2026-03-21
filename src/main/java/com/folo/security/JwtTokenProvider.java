@@ -46,6 +46,23 @@ public class JwtTokenProvider {
         );
     }
 
+    public FoloUserPrincipal toAccessPrincipal(String token) {
+        Claims claims = parse(token);
+        String type = claims.get("type", String.class);
+        if (!"access".equals(type)) {
+            throw new IllegalArgumentException("Access token is required");
+        }
+
+        return new FoloUserPrincipal(
+                claims.get("userId", Long.class),
+                claims.getSubject()
+        );
+    }
+
+    public String getTokenType(String token) {
+        return parse(token).get("type", String.class);
+    }
+
     private String generateToken(FoloUserPrincipal principal, long expirationSeconds, String type) {
         Instant now = Instant.now();
         return Jwts.builder()

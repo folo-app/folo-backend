@@ -29,7 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (authorization != null && authorization.startsWith("Bearer ")) {
             String token = authorization.substring(7);
             try {
-                FoloUserPrincipal principal = jwtTokenProvider.toPrincipal(token);
+                FoloUserPrincipal principal = jwtTokenProvider.toAccessPrincipal(token);
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         principal,
                         token,
