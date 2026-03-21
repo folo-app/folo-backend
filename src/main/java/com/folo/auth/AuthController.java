@@ -5,7 +5,6 @@ import com.folo.security.SecurityUtils;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,6 +32,17 @@ public class AuthController {
         return ApiResponse.success(authService.login(request), "로그인되었습니다.");
     }
 
+    @PostMapping("/find-id")
+    public ApiResponse<FindLoginIdResponse> findId(@Valid @RequestBody FindLoginIdRequest request) {
+        return ApiResponse.success(authService.findLoginId(request), "로그인 아이디 조회가 완료되었습니다.");
+    }
+
+    @PostMapping("/password/reset-temp")
+    public ApiResponse<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ApiResponse.successMessage("입력한 이메일로 계정이 존재하면 임시 비밀번호를 전송했습니다.");
+    }
+
     @PostMapping("/refresh")
     public ApiResponse<AuthResponse> refresh(@Valid @RequestBody RefreshRequest request) {
         return ApiResponse.success(authService.refresh(request), "토큰이 갱신되었습니다.");
@@ -53,24 +63,6 @@ public class AuthController {
     @PostMapping("/email/confirm")
     public ApiResponse<AuthResponse> confirmEmail(@Valid @RequestBody ConfirmEmailRequest request) {
         return ApiResponse.success(authService.confirmEmail(request), "이메일 인증이 완료되었습니다.");
-    }
-
-    @PostMapping("/account/recover-id")
-    public ApiResponse<Void> recoverLoginId(@Valid @RequestBody RecoverLoginIdRequest request) {
-        authService.recoverLoginId(request);
-        return ApiResponse.successMessage("가입 정보가 있으면 등록된 이메일로 로그인 아이디 안내를 보냈습니다.");
-    }
-
-    @PostMapping("/password/reset/request")
-    public ApiResponse<Void> requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
-        authService.requestPasswordReset(request);
-        return ApiResponse.successMessage("가입 정보가 있으면 비밀번호 재설정 코드를 발송했습니다.");
-    }
-
-    @PostMapping("/password/reset/confirm")
-    public ApiResponse<Void> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest request) {
-        authService.confirmPasswordReset(request);
-        return ApiResponse.successMessage("비밀번호가 재설정되었습니다. 새 비밀번호로 로그인해 주세요.");
     }
 
     @DeleteMapping("/withdraw")

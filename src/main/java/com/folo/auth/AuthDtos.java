@@ -27,6 +27,22 @@ record LoginRequest(
 ) {
 }
 
+record FindLoginIdRequest(
+        @NotBlank @Size(min = 2, max = 20) String nickname
+) {
+}
+
+record FindLoginIdResponse(
+        boolean found,
+        @Nullable String maskedLoginId
+) {
+}
+
+record ResetPasswordRequest(
+        @Email @NotBlank String email
+) {
+}
+
 record RefreshRequest(
         @NotBlank String refreshToken
 ) {
@@ -45,23 +61,6 @@ record VerifyEmailRequest(
 record ConfirmEmailRequest(
         @Email @NotBlank String email,
         @NotBlank @Size(min = 6, max = 6) String code
-) {
-}
-
-record RecoverLoginIdRequest(
-        @NotBlank @Size(min = 2, max = 20) String nickname
-) {
-}
-
-record PasswordResetRequest(
-        @Email @NotBlank String email
-) {
-}
-
-record PasswordResetConfirmRequest(
-        @Email @NotBlank String email,
-        @NotBlank @Size(min = 6, max = 6) String code,
-        @NotBlank @Size(min = 8, max = 100) String newPassword
 ) {
 }
 

@@ -50,38 +50,30 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,
                                 "/api/auth/signup",
                                 "/api/auth/login",
+                                "/api/auth/find-id",
+                                "/api/auth/password/reset-temp",
                                 "/api/auth/refresh",
                                 "/api/auth/email/verify",
                                 "/api/auth/email/confirm",
-                                "/api/auth/account/recover-id",
-                                "/api/auth/password/reset/request",
-                                "/api/auth/password/reset/confirm",
                                 "/api/uploads/profile-image",
-                                "/api/integrations/kis/connect/callback",
                                 "/auth/signup",
                                 "/auth/login",
+                                "/auth/find-id",
+                                "/auth/password/reset-temp",
                                 "/auth/refresh",
                                 "/auth/email/verify",
                                 "/auth/email/confirm",
-                                "/auth/account/recover-id",
-                                "/auth/password/reset/request",
-                                "/auth/password/reset/confirm",
-                                "/uploads/profile-image",
-                                "/integrations/kis/connect/callback"
+                                "/uploads/profile-image"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/stocks/search",
                                 "/api/stocks/discover",
                                 "/api/stocks/*/logo",
                                 "/api/stocks/*/price",
-                                "/api/integrations/kis/connect/authorize",
-                                "/api/integrations/kis/connect/callback",
                                 "/stocks/search",
                                 "/stocks/discover",
                                 "/stocks/*/logo",
-                                "/stocks/*/price",
-                                "/integrations/kis/connect/authorize",
-                                "/integrations/kis/connect/callback"
+                                "/stocks/*/price"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

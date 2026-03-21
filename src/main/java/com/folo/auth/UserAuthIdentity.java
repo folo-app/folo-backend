@@ -69,4 +69,8 @@ public class UserAuthIdentity extends BaseTimeEntity {
     public void verifyEmail() {
         this.emailVerified = true;
     }
+
+    public void changePassword(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
 }

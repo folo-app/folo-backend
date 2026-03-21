@@ -4,7 +4,5 @@ public interface EmailSender {
 
     void sendVerificationCode(String email, String code);
 
-    void sendPasswordResetCode(String email, String code);
-
-    void sendAccountIdReminder(String email, String loginId);
+    void sendTemporaryPassword(String email, String temporaryPassword);
 }
