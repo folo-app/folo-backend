@@ -62,6 +62,7 @@
 ## 필요한 환경 변수
 
 - `KIS_MARKET_DATA_ENABLED`
+- `KIS_DIVIDEND_ENABLED`
 - `MARKET_DATA_SYNC_ENABLED`
 - `MARKET_DATA_SYNC_RUN_ON_STARTUP`
 - `MARKET_DATA_MASTER_CRON`
@@ -83,6 +84,8 @@
 
 - KIS 검색 API는 “종목코드를 알 때 상세조회” 성격이 강하다. 따라서 앱 검색 UX를 위해서는 국내/해외 종목정보파일을 먼저 DB에 적재해야 한다.
 - 국내 파일은 `ticker,name,...` 형태의 정규화 CSV면 충분하다.
+  KRX metadata enrichment까지 쓰려면 `sectorName`, `industryName`,
+  `sourcePayloadVersion` 컬럼을 함께 포함한 정규화 CSV를 권장한다.
 - 해외 파일은 `market` 또는 `primaryExchangeCode`가 반드시 있어야 `NASDAQ/NYSE/AMEX`를 구분할 수 있다.
 - KIS 시세는 앱키/시크릿만으로 live 조회가 가능하고, 조회 결과는 `price_snapshots`에도 upsert 된다.
 - Twelve Data는 `TWELVE_DATA_LOGO_ENABLED=true`일 때 로고 조회에 사용한다.
