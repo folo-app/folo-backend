@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -31,8 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -70,12 +70,8 @@ class TradeServiceTest {
     void myTradesUsesDatabasePaginationForFilteredQueries() {
         Trade trade = createTrade(101L, "AAPL", TradeType.BUY, LocalDateTime.of(2025, 3, 2, 9, 30));
 
-        when(tradeRepository.searchMyTrades(
-                eq(1L),
-                eq("AAPL"),
-                eq(TradeType.BUY),
-                eq(LocalDate.of(2025, 3, 1).atStartOfDay()),
-                eq(LocalDate.of(2025, 3, 4).atStartOfDay()),
+        when(tradeRepository.findAll(
+                any(Specification.class),
                 pageableCaptor.capture()
         )).thenReturn(new PageImpl<>(List.of(trade), PageRequest.of(1, 1), 3));
         when(reactionRepository.findByTradeId(101L)).thenReturn(List.of());
@@ -83,7 +79,7 @@ class TradeServiceTest {
 
         TradeListResponse response = tradeService.myTrades(
                 1L,
-                "  AAPL ",
+                "  aapl ",
                 "buy",
                 LocalDate.of(2025, 3, 1),
                 LocalDate.of(2025, 3, 3),
@@ -116,12 +112,8 @@ class TradeServiceTest {
 
     @Test
     void myTradesAllowsMissingFilters() {
-        when(tradeRepository.searchMyTrades(
-                eq(1L),
-                isNull(),
-                isNull(),
-                isNull(),
-                isNull(),
+        when(tradeRepository.findAll(
+                any(Specification.class),
                 pageableCaptor.capture()
         )).thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
 

@@ -287,7 +287,10 @@ def parse_kosdaq_rows(raw_text: str, include_etp: bool) -> Iterable[NormalizedRo
 
 
 def split_lines(raw_text: str) -> list[str]:
-    return [line for line in raw_text.splitlines() if line.strip()]
+    # KIS official examples slice each raw row while the trailing newline is
+    # still present. Preserving line endings keeps the part1/part2 boundary
+    # aligned with the provider's fixed-width layout.
+    return [line for line in raw_text.splitlines(keepends=True) if line.strip()]
 
 
 def slice_fixed_width_fields(raw_text: str, widths: list[int], columns: list[str]) -> dict[str, str]:
@@ -311,7 +314,19 @@ def build_row(
     if not normalized_ticker or not normalized_name:
         return None
 
-    is_etf = details.get("etp", "") == "Y" or "ETF" in normalized_name.upper()
+    security_group_code = (
+        details.get("group_code")
+        or details.get("security_group_code")
+        or ""
+    ).strip().upper()
+    etp_code = (details.get("etp") or "").strip().upper()
+
+    is_etf = (
+        security_group_code in {"EF", "EN", "ET"}
+        or (etp_code not in {"", "0", "N", "FALSE"})
+        or "ETF" in normalized_name.upper()
+        or "ETN" in normalized_name.upper()
+    )
     if is_etf and not include_etp:
         return None
 
