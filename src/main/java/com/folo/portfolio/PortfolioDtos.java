@@ -16,7 +16,27 @@ record PortfolioHoldingItem(
         @Nullable BigDecimal totalValue,
         @Nullable BigDecimal returnAmount,
         BigDecimal returnRate,
-        BigDecimal weight
+        BigDecimal weight,
+        @Nullable String sectorName,
+        String assetType,
+        @Nullable String currencyCode,
+        @Nullable BigDecimal annualDividendYield,
+        List<Integer> dividendMonths
+) {
+}
+
+record PortfolioAllocationItem(
+        String key,
+        String label,
+        BigDecimal weight,
+        @Nullable BigDecimal value
+) {
+}
+
+record PortfolioMonthlyDividendItem(
+        int month,
+        String label,
+        BigDecimal amount
 ) {
 }
 
@@ -29,6 +49,10 @@ record PortfolioResponse(
         @Nullable BigDecimal dayReturn,
         BigDecimal dayReturnRate,
         List<PortfolioHoldingItem> holdings,
+        List<PortfolioAllocationItem> sectorAllocations,
+        List<PortfolioMonthlyDividendItem> monthlyDividendForecasts,
+        @Nullable BigDecimal cashValue,
+        BigDecimal cashWeight,
         @Nullable String syncedAt,
         boolean isFullyVisible
 ) {
