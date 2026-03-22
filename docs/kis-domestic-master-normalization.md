@@ -19,7 +19,7 @@
 ## 출력 스키마
 
 ```csv
-ticker,name,assetType,primaryExchangeCode,currencyCode,sourceIdentifier,active
+ticker,name,assetType,primaryExchangeCode,currencyCode,sourceIdentifier,active,sectorName,industryName,sourcePayloadVersion
 ```
 
 - `ticker`: 6자리 국내 종목코드
@@ -29,6 +29,9 @@ ticker,name,assetType,primaryExchangeCode,currencyCode,sourceIdentifier,active
 - `currencyCode`: 항상 `KRW`
 - `sourceIdentifier`: 표준코드가 있으면 표준코드, 없으면 종목코드
 - `active`: 정리매매 여부 기준 `true` 또는 `false`
+- `sectorName`: KIS thematic flag 기반 대표 섹터명
+- `industryName`: KIS thematic flag 기반 세부 업종명
+- `sourcePayloadVersion`: enrichment 생성 버전
 
 ## 사용 방법
 
@@ -55,6 +58,21 @@ python3 scripts/normalize_kis_domestic_master.py \
 - `etp=Y` 이거나 종목명에 `ETF`가 들어가면 `ETF`로 표기한다.
 - `liquidation_trade=Y`면 `active=false`로 저장한다.
 - KOSPI, KOSDAQ는 모두 `XKRX`로 통합한다.
+- sector/industry는 원본 master의 thematic flag를 우선 사용한다.
+  - `krx_semiconductor=Y` -> `Technology / Semiconductors`
+  - `krx_bio=Y` -> `Healthcare / Biotechnology`
+  - `krx_bank=Y` -> `Financials / Banking`
+  - `krx_insurance=Y` -> `Financials / Insurance`
+  - `krx_securities=Y` -> `Financials / Securities`
+  - `krx_auto=Y` -> `Consumer Discretionary / Automobiles`
+  - `krx_energy_chem=Y` -> `Materials / Energy & Chemicals`
+  - `krx_steel=Y` -> `Materials / Steel`
+  - `krx_media_telecom=Y` -> `Communication Services / Media & Telecom`
+  - `krx_construction=Y`, `krx_ship=Y`, `krx_transport=Y` -> `Industrials`
+  - 위 분류가 없고 `manufacturing=Y`면 `Industrials / Manufacturing`
+
+기존처럼 기본 컬럼만 있는 CSV도 master sync에는 계속 사용할 수 있다.
+다만 KRX metadata enrichment까지 사용하려면 새 컬럼이 포함된 CSV를 권장한다.
 
 ## 환경 변수 연결
 

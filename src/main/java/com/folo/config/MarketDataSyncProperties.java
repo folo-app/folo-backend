@@ -7,6 +7,8 @@ public record MarketDataSyncProperties(
         boolean enabled,
         boolean runOnStartup,
         String masterCron,
+        String dividendCron,
+        String metadataCron,
         String zone,
         int batchSize,
         TwelveData twelveData,
@@ -22,6 +24,8 @@ public record MarketDataSyncProperties(
 
     public record Polygon(
             boolean logoEnabled,
+            boolean dividendEnabled,
+            boolean metadataEnabled,
             String apiKey,
             String baseUrl
     ) {
@@ -29,6 +33,7 @@ public record MarketDataSyncProperties(
 
     public record Kis(
             boolean enabled,
+            boolean dividendEnabled,
             String baseUrl,
             String appKey,
             String appSecret,

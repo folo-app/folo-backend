@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
         JwtProperties.class,
         EmailVerificationProperties.class,
         AppEmailProperties.class,
+        AppOpsProperties.class,
         FieldEncryptionProperties.class,
         FileStorageProperties.class,
         KisStubProperties.class,

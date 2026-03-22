@@ -1,5 +1,7 @@
 package com.folo.stock;
 
 public enum StockSymbolSyncScope {
-    MASTER
+    MASTER,
+    DIVIDEND,
+    ENRICHMENT
 }

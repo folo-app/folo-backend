@@ -16,15 +16,12 @@ import com.folo.user.UserRepository;
 import org.springframework.lang.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Locale;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -102,16 +99,13 @@ public class TradeService {
         LocalDateTime fromDateTime = from != null ? from.atStartOfDay() : null;
         LocalDateTime toExclusive = to != null ? to.plusDays(1).atStartOfDay() : null;
 
-        Specification<Trade> specification = hasUserId(userId)
-                .and(isNotDeleted())
-                .and(hasTicker(requestedTicker))
-                .and(hasTradeType(requestedTradeType))
-                .and(tradedOnOrAfter(fromDateTime))
-                .and(tradedBefore(toExclusive));
-
-        Page<Trade> trades = tradeRepository.findAll(
-                specification,
-                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"))
+        Page<Trade> trades = tradeRepository.searchMyTrades(
+                userId,
+                requestedTicker,
+                requestedTradeType,
+                fromDateTime,
+                toExclusive,
+                PageRequest.of(page, size)
         );
 
         List<TradeSummaryItem> items = trades.getContent().stream()
@@ -214,48 +208,6 @@ public class TradeService {
         if (ticker == null || ticker.isBlank()) {
             return null;
         }
-        return ticker.trim().toLowerCase(Locale.ROOT);
-    }
-
-    private Specification<Trade> hasUserId(Long userId) {
-        return (root, query, builder) -> builder.equal(root.get("user").get("id"), userId);
-    }
-
-    private Specification<Trade> isNotDeleted() {
-        return (root, query, builder) -> builder.isFalse(root.get("deleted"));
-    }
-
-    private Specification<Trade> hasTicker(@Nullable String ticker) {
-        return (root, query, builder) -> {
-            if (ticker == null) {
-                return builder.conjunction();
-            }
-
-            return builder.equal(
-                    builder.lower(root.join("stockSymbol").get("ticker")),
-                    ticker
-            );
-        };
-    }
-
-    private Specification<Trade> hasTradeType(@Nullable TradeType tradeType) {
-        return (root, query, builder) ->
-                tradeType == null
-                        ? builder.conjunction()
-                        : builder.equal(root.get("tradeType"), tradeType);
-    }
-
-    private Specification<Trade> tradedOnOrAfter(@Nullable LocalDateTime fromDateTime) {
-        return (root, query, builder) ->
-                fromDateTime == null
-                        ? builder.conjunction()
-                        : builder.greaterThanOrEqualTo(root.get("tradedAt"), fromDateTime);
-    }
-
-    private Specification<Trade> tradedBefore(@Nullable LocalDateTime toExclusive) {
-        return (root, query, builder) ->
-                toExclusive == null
-                        ? builder.conjunction()
-                        : builder.lessThan(root.get("tradedAt"), toExclusive);
+        return ticker.trim();
     }
 }

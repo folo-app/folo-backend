@@ -27,6 +27,7 @@ public class StockService {
     private final TradeRepository tradeRepository;
     private final StockBrandingService stockBrandingService;
     private final KisQuoteService kisQuoteService;
+    private final StockSymbolEnrichmentRepository stockSymbolEnrichmentRepository;
 
     public StockService(
             StockSymbolRepository stockSymbolRepository,
@@ -34,7 +35,8 @@ public class StockService {
             HoldingRepository holdingRepository,
             TradeRepository tradeRepository,
             StockBrandingService stockBrandingService,
-            KisQuoteService kisQuoteService
+            KisQuoteService kisQuoteService,
+            StockSymbolEnrichmentRepository stockSymbolEnrichmentRepository
     ) {
         this.stockSymbolRepository = stockSymbolRepository;
         this.priceSnapshotRepository = priceSnapshotRepository;
@@ -42,6 +44,7 @@ public class StockService {
         this.tradeRepository = tradeRepository;
         this.stockBrandingService = stockBrandingService;
         this.kisQuoteService = kisQuoteService;
+        this.stockSymbolEnrichmentRepository = stockSymbolEnrichmentRepository;
     }
 
     @Transactional(readOnly = true)
@@ -214,11 +217,13 @@ public class StockService {
                 stock.getMarket(),
                 stockBrandingService.getPublicLogoUrl(stock),
                 currentPrice,
-                dayReturnRate
+                dayReturnRate,
+                stock.getSectorName()
         );
     }
 
     private StockPriceResponse toPriceResponse(StockSymbol stock, ResolvedStockQuote quote) {
+        StockSymbolEnrichment enrichment = loadLatestEnrichment(stock.getId());
         return new StockPriceResponse(
                 stock.getTicker(),
                 stock.getName(),
@@ -229,11 +234,15 @@ public class StockService {
                 quote.lowPrice(),
                 quote.dayReturn(),
                 quote.dayReturnRate(),
+                stock.getSectorName(),
+                enrichment != null ? enrichment.getIndustryNameRaw() : null,
+                enrichment != null ? enrichment.getClassificationScheme().name() : null,
                 quote.marketUpdatedAt().toString()
         );
     }
 
     private StockPriceResponse toPriceResponse(StockSymbol stock, PriceSnapshot snapshot) {
+        StockSymbolEnrichment enrichment = loadLatestEnrichment(stock.getId());
         return new StockPriceResponse(
                 stock.getTicker(),
                 stock.getName(),
@@ -244,7 +253,15 @@ public class StockService {
                 snapshot.getLowPrice(),
                 snapshot.getDayReturn(),
                 snapshot.getDayReturnRate(),
+                stock.getSectorName(),
+                enrichment != null ? enrichment.getIndustryNameRaw() : null,
+                enrichment != null ? enrichment.getClassificationScheme().name() : null,
                 snapshot.getMarketUpdatedAt().toString()
         );
+    }
+
+    private StockSymbolEnrichment loadLatestEnrichment(Long stockSymbolId) {
+        return stockSymbolEnrichmentRepository.findTopByStockSymbolIdOrderByLastEnrichedAtDesc(stockSymbolId)
+                .orElse(null);
     }
 }
