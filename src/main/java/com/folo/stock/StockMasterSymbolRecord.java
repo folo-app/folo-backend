@@ -11,6 +11,9 @@ public record StockMasterSymbolRecord(
         boolean active,
         String primaryExchangeCode,
         String currencyCode,
-        String sourceIdentifier
+        String sourceIdentifier,
+        String sectorName,
+        java.math.BigDecimal annualDividendYield,
+        String dividendMonthsCsv
 ) {
 }

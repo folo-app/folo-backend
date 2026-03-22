@@ -70,7 +70,10 @@ public class PolygonStockMasterSyncProvider implements StockMasterSyncProvider {
                     result.active() == null || result.active(),
                     result.primary_exchange(),
                     StringUtils.hasText(result.currency_symbol()) ? result.currency_symbol() : "USD",
-                    StringUtils.hasText(result.composite_figi()) ? result.composite_figi() : result.ticker()
+                    StringUtils.hasText(result.composite_figi()) ? result.composite_figi() : result.ticker(),
+                    null,
+                    null,
+                    null
             ));
         }
 

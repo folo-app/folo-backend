@@ -12,12 +12,16 @@ import org.springframework.util.StringUtils;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -125,7 +129,10 @@ public class KisStockMasterFileSyncProvider implements StockMasterSyncProvider {
                 parseActive(record),
                 primaryExchangeCode,
                 resolveCurrencyCode(resolvedMarket, record),
-                resolveSourceIdentifier(record, ticker)
+                resolveSourceIdentifier(record, ticker),
+                resolveSectorName(record),
+                parseAnnualDividendYield(record),
+                resolveDividendMonths(record)
         );
     }
 
@@ -186,6 +193,76 @@ public class KisStockMasterFileSyncProvider implements StockMasterSyncProvider {
     private String resolveSourceIdentifier(CSVRecord record, String ticker) {
         String raw = firstPresent(record, "sourceIdentifier", "std_pdno", "isin", "figi");
         return StringUtils.hasText(raw) ? raw.trim() : ticker.trim().toUpperCase();
+    }
+
+    private String resolveSectorName(CSVRecord record) {
+        String raw = firstPresent(
+                record,
+                "sectorName",
+                "sector",
+                "industryName",
+                "industry_name",
+                "gicsSector",
+                "theme"
+        );
+        return StringUtils.hasText(raw) ? raw.trim() : null;
+    }
+
+    private BigDecimal parseAnnualDividendYield(CSVRecord record) {
+        String raw = firstPresent(
+                record,
+                "annualDividendYield",
+                "dividendYield",
+                "dividend_yield",
+                "div_yield",
+                "dvdn_yld"
+        );
+        if (!StringUtils.hasText(raw)) {
+            return null;
+        }
+
+        String normalized = raw.replace("%", "").replace(",", "").trim();
+        if (!StringUtils.hasText(normalized)) {
+            return null;
+        }
+
+        try {
+            return new BigDecimal(normalized);
+        } catch (NumberFormatException exception) {
+            log.warn("Unable to parse annual dividend yield: {}", raw);
+            return null;
+        }
+    }
+
+    private String resolveDividendMonths(CSVRecord record) {
+        String raw = firstPresent(
+                record,
+                "dividendMonths",
+                "dividend_months",
+                "dividendMonthsCsv",
+                "payoutMonths",
+                "dividendSchedule"
+        );
+        if (!StringUtils.hasText(raw)) {
+            return null;
+        }
+
+        LinkedHashSet<String> months = Arrays.stream(raw.split("[^0-9]+"))
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .filter(this::isMonthToken)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        return months.isEmpty() ? null : String.join(",", months);
+    }
+
+    private boolean isMonthToken(String raw) {
+        try {
+            int month = Integer.parseInt(raw);
+            return month >= 1 && month <= 12;
+        } catch (NumberFormatException exception) {
+            return false;
+        }
     }
 
     private String resolvePrimaryExchangeCode(MarketType market, CSVRecord record) {

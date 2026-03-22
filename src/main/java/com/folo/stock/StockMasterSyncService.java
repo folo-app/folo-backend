@@ -4,7 +4,9 @@ import com.folo.config.MarketDataSyncProperties;
 import com.folo.common.enums.MarketType;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -109,6 +111,7 @@ public class StockMasterSyncService {
             stockSymbol.setActive(record.active());
             stockSymbol.setPrimaryExchangeCode(record.primaryExchangeCode());
             stockSymbol.setCurrencyCode(record.currencyCode());
+            applyMasterMetadataFallback(stockSymbol, record);
             stockSymbol.setSourceProvider(provider);
             stockSymbol.setSourceIdentifier(record.sourceIdentifier());
             stockSymbol.setLastMasterSyncedAt(syncedAt);
@@ -117,6 +120,27 @@ public class StockMasterSyncService {
         }
 
         return changed;
+    }
+
+    private void applyMasterMetadataFallback(StockSymbol stockSymbol, StockMasterSymbolRecord record) {
+        if (!StringUtils.hasText(stockSymbol.getSectorName())
+                && StringUtils.hasText(record.sectorName())) {
+            stockSymbol.setSectorName(record.sectorName().trim());
+        }
+
+        if (stockSymbol.getAnnualDividendYield() == null
+                && hasPositiveValue(record.annualDividendYield())) {
+            stockSymbol.setAnnualDividendYield(record.annualDividendYield());
+        }
+
+        if (!StringUtils.hasText(stockSymbol.getDividendMonthsCsv())
+                && StringUtils.hasText(record.dividendMonthsCsv())) {
+            stockSymbol.setDividendMonthsCsv(record.dividendMonthsCsv().trim());
+        }
+    }
+
+    private boolean hasPositiveValue(BigDecimal value) {
+        return value != null && value.compareTo(BigDecimal.ZERO) > 0;
     }
 
     private int deactivateMissingSymbols(
