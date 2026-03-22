@@ -31,6 +31,8 @@ public interface StockSymbolRepository extends JpaRepository<StockSymbol, Long> 
 
     List<StockSymbol> findAllBySourceProviderAndMarket(StockDataProvider sourceProvider, MarketType market);
 
+    List<StockSymbol> findByMarketAndTickerInAndActiveTrue(MarketType market, List<String> tickers);
+
     @Query("""
             select s
             from StockSymbol s
@@ -42,4 +44,20 @@ public interface StockSymbolRepository extends JpaRepository<StockSymbol, Long> 
                      s.name asc
             """)
     List<StockSymbol> findActiveByMarkets(List<MarketType> markets, Pageable pageable);
+
+    @Query("""
+            select s
+            from StockSymbol s
+            where s.active = true
+              and s.market in :markets
+              and s.sectorName is not null
+              and upper(s.sectorName) in :sectorNames
+            order by case when s.assetType = com.folo.common.enums.AssetType.STOCK then 0 else 1 end,
+                     s.name asc
+            """)
+    List<StockSymbol> findActiveByMarketsAndSectorNames(
+            List<MarketType> markets,
+            List<String> sectorNames,
+            Pageable pageable
+    );
 }

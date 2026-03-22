@@ -3,8 +3,6 @@ package com.folo.stock;
 import com.folo.common.enums.MarketType;
 import com.folo.common.exception.ApiException;
 import com.folo.common.exception.ErrorCode;
-import com.folo.portfolio.HoldingRepository;
-import com.folo.trade.TradeRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -12,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -23,31 +20,28 @@ public class StockService {
 
     private final StockSymbolRepository stockSymbolRepository;
     private final PriceSnapshotRepository priceSnapshotRepository;
-    private final HoldingRepository holdingRepository;
-    private final TradeRepository tradeRepository;
     private final StockBrandingService stockBrandingService;
     private final KisQuoteService kisQuoteService;
     private final StockSymbolEnrichmentRepository stockSymbolEnrichmentRepository;
+    private final StockRecommendationService stockRecommendationService;
 
     public StockService(
             StockSymbolRepository stockSymbolRepository,
             PriceSnapshotRepository priceSnapshotRepository,
-            HoldingRepository holdingRepository,
-            TradeRepository tradeRepository,
             StockBrandingService stockBrandingService,
             KisQuoteService kisQuoteService,
-            StockSymbolEnrichmentRepository stockSymbolEnrichmentRepository
+            StockSymbolEnrichmentRepository stockSymbolEnrichmentRepository,
+            StockRecommendationService stockRecommendationService
     ) {
         this.stockSymbolRepository = stockSymbolRepository;
         this.priceSnapshotRepository = priceSnapshotRepository;
-        this.holdingRepository = holdingRepository;
-        this.tradeRepository = tradeRepository;
         this.stockBrandingService = stockBrandingService;
         this.kisQuoteService = kisQuoteService;
         this.stockSymbolEnrichmentRepository = stockSymbolEnrichmentRepository;
+        this.stockRecommendationService = stockRecommendationService;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public StockSearchResponse search(@Nullable String q, @Nullable String market) {
         if (q == null || q.trim().length() < 2) {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "검색어는 2자 이상이어야 합니다.");
@@ -68,17 +62,24 @@ public class StockService {
                 .toList());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public StockDiscoverResponse discover(int limit) {
         int normalizedLimit = Math.max(1, Math.min(limit, 24));
 
         return new StockDiscoverResponse(
-                discoverForMarkets(List.of(MarketType.KRX), normalizedLimit),
-                discoverForMarkets(List.of(MarketType.NASDAQ, MarketType.NYSE, MarketType.AMEX), normalizedLimit)
+                toDiscoverItems(
+                        stockRecommendationService.recommendForMarkets(List.of(MarketType.KRX), normalizedLimit)
+                ),
+                toDiscoverItems(
+                        stockRecommendationService.recommendForMarkets(
+                                List.of(MarketType.NASDAQ, MarketType.NYSE, MarketType.AMEX),
+                                normalizedLimit
+                        )
+                )
         );
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public StockPriceResponse getPrice(String ticker, String market) {
         StockSymbol stock = stockSymbolRepository.findByMarketAndTicker(MarketType.valueOf(market.toUpperCase()), ticker)
                 .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "종목을 찾을 수 없습니다."));
@@ -102,49 +103,18 @@ public class StockService {
                 .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "종목을 찾을 수 없습니다."));
     }
 
-    private List<StockSearchItem> discoverForMarkets(List<MarketType> markets, int limit) {
-        LinkedHashSet<Long> symbolIds = new LinkedHashSet<>();
-
-        holdingRepository.findTopSymbolIdsByMarkets(markets).stream()
-                .limit(limit)
-                .forEach(symbolIds::add);
-
-        if (symbolIds.size() < limit) {
-            tradeRepository.findTopSymbolIdsByMarkets(markets).stream()
-                    .filter(symbolId -> !symbolIds.contains(symbolId))
-                    .limit(limit - symbolIds.size())
-                    .forEach(symbolIds::add);
-        }
-
-        if (symbolIds.size() < limit) {
-            stockSymbolRepository.findActiveByMarkets(markets, PageRequest.of(0, limit * 2)).stream()
-                    .map(StockSymbol::getId)
-                    .filter(symbolId -> !symbolIds.contains(symbolId))
-                    .limit(limit - symbolIds.size())
-                    .forEach(symbolIds::add);
-        }
-
-        if (symbolIds.isEmpty()) {
+    private List<StockSearchItem> toDiscoverItems(List<StockSymbol> symbols) {
+        if (symbols.isEmpty()) {
             return List.of();
         }
-
-        List<StockSymbol> symbols = stockSymbolRepository.findAllById(symbolIds);
-        Map<Long, StockSymbol> symbolById = symbols.stream()
-                .collect(Collectors.toMap(StockSymbol::getId, Function.identity()));
 
         Map<Long, PriceSnapshot> snapshotBySymbolId = loadSnapshots(symbols);
         Map<Long, ResolvedStockQuote> liveQuotes = loadLiveQuotes(symbols);
 
         List<StockSearchItem> result = new ArrayList<>();
-        for (Long symbolId : symbolIds) {
-            StockSymbol stock = symbolById.get(symbolId);
-            if (stock == null) {
-                continue;
-            }
-
-            result.add(toSearchItem(stock, liveQuotes.get(symbolId), snapshotBySymbolId.get(symbolId)));
+        for (StockSymbol stock : symbols) {
+            result.add(toSearchItem(stock, liveQuotes.get(stock.getId()), snapshotBySymbolId.get(stock.getId())));
         }
-
         return result;
     }
 

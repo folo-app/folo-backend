@@ -62,4 +62,22 @@ public interface TradeRepository extends JpaRepository<Trade, Long>, JpaSpecific
             order by count(t.id) desc, sum(t.totalAmount) desc
             """)
     List<Long> findTopSymbolIdsByMarkets(@Param("markets") List<MarketType> markets);
+
+    @Query("""
+            select new com.folo.stock.StockPopularityStat(
+                t.stockSymbol.id,
+                count(t.id),
+                coalesce(sum(t.totalAmount), 0)
+            )
+            from Trade t
+            where t.deleted = false
+              and t.stockSymbol.market in :markets
+              and t.stockSymbol.active = true
+            group by t.stockSymbol.id
+            order by count(t.id) desc, coalesce(sum(t.totalAmount), 0) desc, t.stockSymbol.id asc
+            """)
+    List<com.folo.stock.StockPopularityStat> findTopRecommendationStatsByMarkets(
+            @Param("markets") List<MarketType> markets,
+            Pageable pageable
+    );
 }
