@@ -32,11 +32,13 @@ class KisStockMasterFileSyncProviderTest {
                 true,
                 true,
                 "0 0 4 * * *",
+                "0 30 4 * * *",
+                "0 0 5 * * *",
                 "Asia/Seoul",
                 500,
                 new MarketDataSyncProperties.TwelveData(false, "", "https://api.twelvedata.com"),
-                new MarketDataSyncProperties.Polygon(false, "", "https://api.polygon.io"),
-                new MarketDataSyncProperties.Kis(true, "", "", "", domesticMasterFileUrl, overseasMasterFileUrl)
+                new MarketDataSyncProperties.Polygon(false, false, false, "", "https://api.polygon.io"),
+                new MarketDataSyncProperties.Kis(true, false, "", "", "", domesticMasterFileUrl, overseasMasterFileUrl)
         );
     }
 }

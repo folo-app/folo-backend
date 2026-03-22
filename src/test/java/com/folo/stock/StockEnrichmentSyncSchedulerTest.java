@@ -3,23 +3,27 @@ package com.folo.stock;
 import com.folo.config.MarketDataSyncProperties;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
-class StockMasterStartupSyncRunnerTest {
+class StockEnrichmentSyncSchedulerTest {
 
     @Test
-    void startupSyncFailureDoesNotAbortApplicationReadyFlow() {
-        StockMasterSyncService syncService = mock(StockMasterSyncService.class);
-        doThrow(new IllegalStateException("boom")).when(syncService).syncAll();
-
-        StockMasterStartupSyncRunner runner = new StockMasterStartupSyncRunner(
-                properties(true, true),
-                syncService
+    void schedulerSkipsWhenMarketDataIntegrationIsDisabled() {
+        StockDividendEnrichmentService dividendService = mock(StockDividendEnrichmentService.class);
+        StockMetadataEnrichmentService metadataService = mock(StockMetadataEnrichmentService.class);
+        StockEnrichmentSyncScheduler scheduler = new StockEnrichmentSyncScheduler(
+                properties(false, false),
+                dividendService,
+                metadataService
         );
 
-        assertDoesNotThrow(runner::syncOnStartup);
+        scheduler.syncDividendNightly();
+        scheduler.syncMetadataNightly();
+
+        verify(dividendService, never()).syncPrioritySymbols();
+        verify(metadataService, never()).syncPrioritySymbols();
     }
 
     private MarketDataSyncProperties properties(boolean enabled, boolean runOnStartup) {

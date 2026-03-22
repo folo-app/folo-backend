@@ -104,6 +104,58 @@ class NormalizedRow:
     currency_code: str
     source_identifier: str
     active: str
+    sector_name: str
+    industry_name: str
+    source_payload_version: str
+
+
+SOURCE_PAYLOAD_VERSION = "kis:domestic-master:v2"
+
+OUTPUT_COLUMNS = [
+    "ticker",
+    "name",
+    "assetType",
+    "primaryExchangeCode",
+    "currencyCode",
+    "sourceIdentifier",
+    "active",
+    "sectorName",
+    "industryName",
+    "sourcePayloadVersion",
+]
+
+INDUSTRY_FLAG_PRIORITY = [
+    ("krx_semiconductor", "Semiconductors"),
+    ("krx_bio", "Biotechnology"),
+    ("krx_bank", "Banking"),
+    ("krx_insurance", "Insurance"),
+    ("krx_securities", "Securities"),
+    ("krx_auto", "Automobiles"),
+    ("krx_energy_chem", "Energy & Chemicals"),
+    ("krx_steel", "Steel"),
+    ("krx_media_telecom", "Media & Telecom"),
+    ("krx_construction", "Construction"),
+    ("krx_ship", "Shipbuilding"),
+    ("krx_transport", "Transportation"),
+]
+
+INDUSTRY_TO_SECTOR = {
+    "Semiconductors": "Technology",
+    "Biotechnology": "Healthcare",
+    "Banking": "Financials",
+    "Insurance": "Financials",
+    "Securities": "Financials",
+    "SPAC": "Financials",
+    "Automobiles": "Consumer Discretionary",
+    "Energy & Chemicals": "Materials",
+    "Steel": "Materials",
+    "Media & Telecom": "Communication Services",
+    "Construction": "Industrials",
+    "Shipbuilding": "Industrials",
+    "Transportation": "Industrials",
+    "Manufacturing": "Industrials",
+    "Venture": "Venture",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -142,15 +194,7 @@ def main() -> int:
 
     with output_path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle)
-        writer.writerow([
-            "ticker",
-            "name",
-            "assetType",
-            "primaryExchangeCode",
-            "currencyCode",
-            "sourceIdentifier",
-            "active",
-        ])
+        writer.writerow(OUTPUT_COLUMNS)
         for row in sorted(rows.values(), key=lambda item: item.ticker):
             writer.writerow([
                 row.ticker,
@@ -160,6 +204,9 @@ def main() -> int:
                 row.currency_code,
                 row.source_identifier,
                 row.active,
+                row.sector_name,
+                row.industry_name,
+                row.source_payload_version,
             ])
 
     print(f"Wrote {len(rows)} rows to {output_path}")
@@ -269,6 +316,8 @@ def build_row(
         return None
 
     active = "false" if details.get("liquidation_trade", "") == "Y" else "true"
+    industry_name = derive_industry_name(details)
+    sector_name = derive_sector_name(details, industry_name)
 
     return NormalizedRow(
         ticker=normalized_ticker,
@@ -278,7 +327,45 @@ def build_row(
         currency_code="KRW",
         source_identifier=standard_code or normalized_ticker,
         active=active,
+        sector_name=sector_name or "",
+        industry_name=industry_name or "",
+        source_payload_version=SOURCE_PAYLOAD_VERSION,
     )
+
+
+def derive_industry_name(details: dict[str, str]) -> str | None:
+    for column, label in INDUSTRY_FLAG_PRIORITY:
+        if is_enabled(details.get(column)):
+            return label
+
+    if is_enabled(details.get("spac")):
+        return "SPAC"
+
+    if is_enabled(details.get("venture")):
+        return "Venture"
+
+    if is_enabled(details.get("manufacturing")):
+        return "Manufacturing"
+
+    return None
+
+
+def derive_sector_name(details: dict[str, str], industry_name: str | None) -> str | None:
+    if industry_name:
+        return INDUSTRY_TO_SECTOR.get(industry_name, industry_name)
+
+    if is_enabled(details.get("manufacturing")):
+        return "Industrials"
+
+    return None
+
+
+def is_enabled(raw: str | None) -> bool:
+    if raw is None:
+        return False
+
+    normalized = raw.strip().upper()
+    return normalized in {"Y", "1", "TRUE"}
 
 
 if __name__ == "__main__":

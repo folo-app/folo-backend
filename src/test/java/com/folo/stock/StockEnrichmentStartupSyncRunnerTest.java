@@ -7,16 +7,19 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
-class StockMasterStartupSyncRunnerTest {
+class StockEnrichmentStartupSyncRunnerTest {
 
     @Test
     void startupSyncFailureDoesNotAbortApplicationReadyFlow() {
-        StockMasterSyncService syncService = mock(StockMasterSyncService.class);
-        doThrow(new IllegalStateException("boom")).when(syncService).syncAll();
+        StockDividendEnrichmentService dividendService = mock(StockDividendEnrichmentService.class);
+        StockMetadataEnrichmentService metadataService = mock(StockMetadataEnrichmentService.class);
+        doThrow(new IllegalStateException("metadata boom")).when(metadataService).syncPrioritySymbols();
+        doThrow(new IllegalStateException("dividend boom")).when(dividendService).syncPrioritySymbols();
 
-        StockMasterStartupSyncRunner runner = new StockMasterStartupSyncRunner(
+        StockEnrichmentStartupSyncRunner runner = new StockEnrichmentStartupSyncRunner(
                 properties(true, true),
-                syncService
+                dividendService,
+                metadataService
         );
 
         assertDoesNotThrow(runner::syncOnStartup);

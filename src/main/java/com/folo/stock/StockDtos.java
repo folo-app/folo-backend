@@ -11,7 +11,8 @@ record StockSearchItem(
         MarketType market,
         String logoUrl,
         BigDecimal currentPrice,
-        BigDecimal dayReturnRate
+        BigDecimal dayReturnRate,
+        String sectorName
 ) {
 }
 
@@ -36,6 +37,9 @@ record StockPriceResponse(
         BigDecimal lowPrice,
         BigDecimal dayReturn,
         BigDecimal dayReturnRate,
+        String sectorName,
+        String industryName,
+        String classificationScheme,
         String updatedAt
 ) {
 }
