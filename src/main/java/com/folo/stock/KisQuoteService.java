@@ -50,7 +50,13 @@ public class KisQuoteService {
             return Map.of();
         }
 
-        String accessToken = accessTokenService.getAccessToken();
+        String accessToken;
+        try {
+            accessToken = accessTokenService.getAccessToken();
+        } catch (RuntimeException exception) {
+            log.warn("KIS access token fetch failed - {}", exception.getMessage());
+            return Map.of();
+        }
         Map<Long, ResolvedStockQuote> resolved = new LinkedHashMap<>();
         List<StockSymbol> domesticTargets = new ArrayList<>();
         Map<MarketType, List<StockSymbol>> overseasTargets = new EnumMap<>(MarketType.class);
