@@ -80,6 +80,7 @@ integration:
       app-key: ${KIS_APP_KEY:}
       app-secret: ${KIS_APP_SECRET:}
       redirect-uri: ${KIS_REDIRECT_URI:}
+      app-redirect-url: ${KIS_APP_REDIRECT_URL:folo://kis/callback}
       corp-no: ${KIS_CORP_NO:}
       corp-name: ${KIS_CORP_NAME:Folo}
       contract-type: ${KIS_CONTRACT_TYPE:4}

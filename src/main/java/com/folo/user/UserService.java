@@ -1,12 +1,15 @@
 package com.folo.user;
 
+import com.folo.auth.UserAuthIdentity;
+import com.folo.auth.UserAuthIdentityRepository;
 import com.folo.common.exception.ApiException;
 import com.folo.common.exception.ErrorCode;
 import com.folo.follow.SocialRelationService;
 import com.folo.security.FieldEncryptor;
-import org.springframework.lang.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.lang.Nullable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,13 +17,23 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final UserAuthIdentityRepository userAuthIdentityRepository;
     private final SocialRelationService socialRelationService;
     private final FieldEncryptor fieldEncryptor;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, SocialRelationService socialRelationService, FieldEncryptor fieldEncryptor) {
+    public UserService(
+            UserRepository userRepository,
+            UserAuthIdentityRepository userAuthIdentityRepository,
+            SocialRelationService socialRelationService,
+            FieldEncryptor fieldEncryptor,
+            PasswordEncoder passwordEncoder
+    ) {
         this.userRepository = userRepository;
+        this.userAuthIdentityRepository = userAuthIdentityRepository;
         this.socialRelationService = socialRelationService;
         this.fieldEncryptor = fieldEncryptor;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional(readOnly = true)
@@ -71,6 +84,25 @@ public class UserService {
         user.setKisAppSecretEncrypted(fieldEncryptor.encrypt(request.kisAppSecret()));
     }
 
+    @Transactional
+    public void changeMyPassword(Long userId, ChangeMyPasswordRequest request) {
+        UserAuthIdentity identity = userAuthIdentityRepository.findByUserIdAndProvider(userId, com.folo.common.enums.AuthProvider.EMAIL)
+                .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "이메일 계정을 찾을 수 없습니다."));
+
+        if (!passwordEncoder.matches(request.currentPassword(), identity.getPasswordHash())) {
+            throw new ApiException(ErrorCode.INVALID_CREDENTIALS, "현재 비밀번호가 올바르지 않습니다.");
+        }
+        if (!request.newPassword().equals(request.confirmPassword())) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "새 비밀번호 확인이 일치하지 않습니다.");
+        }
+        if (request.currentPassword().equals(request.newPassword())) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "기존과 다른 새 비밀번호를 입력해 주세요.");
+        }
+
+        validatePassword(request.newPassword());
+        identity.changePassword(passwordEncoder.encode(request.newPassword()));
+    }
+
     @Transactional(readOnly = true)
     public PublicProfileResponse getProfile(Long currentUserId, Long targetUserId) {
         User target = userRepository.findByIdAndActiveTrue(targetUserId)
@@ -116,5 +148,12 @@ public class UserService {
                 result.getTotalElements(),
                 result.hasNext()
         );
+    }
+
+    private void validatePassword(String password) {
+        boolean valid = password.matches("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[^A-Za-z\\d]).{8,100}$");
+        if (!valid) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "비밀번호는 8자 이상이며 영문, 숫자, 특수문자를 포함해야 합니다.");
+        }
     }
 }

@@ -30,6 +30,13 @@ record UpdateMyProfileRequest(
 ) {
 }
 
+record ChangeMyPasswordRequest(
+        @NotBlank String currentPassword,
+        @NotBlank @Size(min = 8, max = 100) String newPassword,
+        @NotBlank @Size(min = 8, max = 100) String confirmPassword
+) {
+}
+
 record UpdateKisKeyRequest(
         @NotBlank @Size(min = 8, max = 255) String kisAppKey,
         @NotBlank @Size(min = 8, max = 255) String kisAppSecret

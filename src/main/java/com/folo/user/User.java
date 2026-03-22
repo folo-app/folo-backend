@@ -70,6 +70,35 @@ public class User extends BaseTimeEntity {
     @Nullable
     private String kisAppSecretEncrypted;
 
+    @Column(length = 3000)
+    @Nullable
+    private String kisAccessTokenEncrypted;
+
+    @Column(length = 3000)
+    @Nullable
+    private String kisRefreshTokenEncrypted;
+
+    @Column(length = 500)
+    @Nullable
+    private String kisPersonalSecretKeyEncrypted;
+
+    @Column(length = 255)
+    @Nullable
+    private String kisAccountNumberEncrypted;
+
+    @Column(length = 20)
+    @Nullable
+    private String kisAccountProductCode;
+
+    @Nullable
+    private LocalDateTime kisAccessTokenExpiresAt;
+
+    @Nullable
+    private LocalDateTime kisRefreshTokenExpiresAt;
+
+    @Nullable
+    private LocalDateTime kisConnectedAt;
+
     public User(String handle, String nickname, @Nullable String profileImageUrl) {
         this.handle = handle;
         this.nickname = nickname;
@@ -106,5 +135,36 @@ public class User extends BaseTimeEntity {
     public void withdraw() {
         this.active = false;
         this.withdrawnAt = LocalDateTime.now();
+    }
+
+    public void connectKis(
+            String accessTokenEncrypted,
+            @Nullable String refreshTokenEncrypted,
+            String personalSecretKeyEncrypted,
+            @Nullable String accountNumberEncrypted,
+            @Nullable String accountProductCode,
+            @Nullable LocalDateTime accessTokenExpiresAt,
+            @Nullable LocalDateTime refreshTokenExpiresAt,
+            LocalDateTime connectedAt
+    ) {
+        this.kisAccessTokenEncrypted = accessTokenEncrypted;
+        this.kisRefreshTokenEncrypted = refreshTokenEncrypted;
+        this.kisPersonalSecretKeyEncrypted = personalSecretKeyEncrypted;
+        this.kisAccountNumberEncrypted = accountNumberEncrypted;
+        this.kisAccountProductCode = accountProductCode;
+        this.kisAccessTokenExpiresAt = accessTokenExpiresAt;
+        this.kisRefreshTokenExpiresAt = refreshTokenExpiresAt;
+        this.kisConnectedAt = connectedAt;
+    }
+
+    public void disconnectKis() {
+        this.kisAccessTokenEncrypted = null;
+        this.kisRefreshTokenEncrypted = null;
+        this.kisPersonalSecretKeyEncrypted = null;
+        this.kisAccountNumberEncrypted = null;
+        this.kisAccountProductCode = null;
+        this.kisAccessTokenExpiresAt = null;
+        this.kisRefreshTokenExpiresAt = null;
+        this.kisConnectedAt = null;
     }
 }
