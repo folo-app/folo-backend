@@ -31,6 +31,12 @@ public class UserController {
         return ApiResponse.success(userService.updateMe(SecurityUtils.currentUserId(), request), "프로필이 수정되었습니다.");
     }
 
+    @PatchMapping("/me/password")
+    public ApiResponse<Void> changeMyPassword(@Valid @RequestBody ChangeMyPasswordRequest request) {
+        userService.changeMyPassword(SecurityUtils.currentUserId(), request);
+        return ApiResponse.successMessage("비밀번호가 변경되었습니다.");
+    }
+
     @GetMapping("/{userId}")
     public ApiResponse<PublicProfileResponse> getUser(@PathVariable Long userId) {
         return ApiResponse.success(userService.getProfile(SecurityUtils.currentUserId(), userId), "요청이 성공했습니다.");
