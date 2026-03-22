@@ -5,6 +5,7 @@ import com.folo.common.enums.TradeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface TradeRepository extends JpaRepository<Trade, Long> {
+public interface TradeRepository extends JpaRepository<Trade, Long>, JpaSpecificationExecutor<Trade> {
 
     Page<Trade> findByUserIdAndDeletedFalse(Long userId, Pageable pageable);
 
@@ -31,26 +32,6 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
     Optional<Trade> findByIdAndDeletedFalse(Long id);
 
     Page<Trade> findByUserIdAndDeletedFalseAndTradedAtBetween(Long userId, LocalDateTime from, LocalDateTime to, Pageable pageable);
-
-    @Query("""
-            select t
-            from Trade t
-            where t.user.id = :userId
-              and t.deleted = false
-              and (:ticker is null or lower(t.stockSymbol.ticker) = lower(:ticker))
-              and (:tradeType is null or t.tradeType = :tradeType)
-              and (:from is null or t.tradedAt >= :from)
-              and (:toExclusive is null or t.tradedAt < :toExclusive)
-            order by t.id desc
-            """)
-    Page<Trade> searchMyTrades(
-            @Param("userId") Long userId,
-            @Param("ticker") String ticker,
-            @Param("tradeType") TradeType tradeType,
-            @Param("from") LocalDateTime from,
-            @Param("toExclusive") LocalDateTime toExclusive,
-            Pageable pageable
-    );
 
     @Query("""
             select t.stockSymbol.id
