@@ -22,11 +22,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 public class AuthService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
+    private static final String TEMP_PASSWORD_SYMBOLS = "!@#$%^&*";
 
     private final UserRepository userRepository;
     private final UserAuthIdentityRepository userAuthIdentityRepository;
@@ -104,6 +106,25 @@ public class AuthService {
         }
 
         return issueTokens(identity, null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public FindLoginIdResponse findLoginId(FindLoginIdRequest request) {
+        Optional<User> user = userRepository.findByNicknameIgnoreCaseAndActiveTrue(request.nickname().trim());
+        if (user.isEmpty()) {
+            return new FindLoginIdResponse(false, null);
+        }
+
+        return userAuthIdentityRepository.findByUserIdAndProvider(user.get().getId(), AuthProvider.EMAIL)
+                .filter(identity -> identity.getEmail() != null && !identity.getEmail().isBlank())
+                .map(identity -> new FindLoginIdResponse(true, maskEmail(identity.getEmail())))
+                .orElseGet(() -> new FindLoginIdResponse(false, null));
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        userAuthIdentityRepository.findByProviderAndProviderUserId(AuthProvider.EMAIL, request.email())
+                .ifPresent(this::issueTemporaryPassword);
     }
 
     @Transactional
@@ -225,6 +246,21 @@ public class AuthService {
                 .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "이메일 계정을 찾을 수 없습니다."));
     }
 
+    private void issueTemporaryPassword(UserAuthIdentity identity) {
+        if (!identity.getUser().isActive()) {
+            return;
+        }
+
+        String temporaryPassword = generateTemporaryPassword();
+        identity.changePassword(passwordEncoder.encode(temporaryPassword));
+        if (!identity.isEmailVerified()) {
+            identity.verifyEmail();
+        }
+        refreshTokenRepository.findByUserIdAndRevokedAtIsNull(identity.getUser().getId())
+                .forEach(RefreshToken::revoke);
+        emailSender.sendTemporaryPassword(identity.getEmail(), temporaryPassword);
+    }
+
     private void validatePassword(String password) {
         boolean valid = password.matches("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[^A-Za-z\\d]).{8,100}$");
         if (!valid) {
@@ -243,5 +279,56 @@ public class AuthService {
     private String generateCode() {
         int value = RANDOM.nextInt(900_000) + 100_000;
         return Integer.toString(value);
+    }
+
+    private String generateTemporaryPassword() {
+        String letters = "" + randomFromRange('A', 'Z') + randomFromRange('a', 'z');
+        String digits = Character.toString(randomFromRange('0', '9'));
+        String symbols = Character.toString(TEMP_PASSWORD_SYMBOLS.charAt(RANDOM.nextInt(TEMP_PASSWORD_SYMBOLS.length())));
+        StringBuilder builder = new StringBuilder(letters)
+                .append(digits)
+                .append(symbols);
+        while (builder.length() < 12) {
+            int mode = RANDOM.nextInt(4);
+            if (mode == 0) {
+                builder.append(randomFromRange('A', 'Z'));
+            } else if (mode == 1) {
+                builder.append(randomFromRange('a', 'z'));
+            } else if (mode == 2) {
+                builder.append(randomFromRange('0', '9'));
+            } else {
+                builder.append(TEMP_PASSWORD_SYMBOLS.charAt(RANDOM.nextInt(TEMP_PASSWORD_SYMBOLS.length())));
+            }
+        }
+        return shuffle(builder.toString());
+    }
+
+    private String maskEmail(String email) {
+        int atIndex = email.indexOf('@');
+        if (atIndex <= 0) {
+            return email;
+        }
+
+        String localPart = email.substring(0, atIndex);
+        String domainPart = email.substring(atIndex);
+        int visibleLength = Math.min(2, localPart.length());
+        String visible = localPart.substring(0, visibleLength);
+        String masked = "*".repeat(Math.max(1, localPart.length() - visibleLength));
+        return visible + masked + domainPart;
+    }
+
+    private String shuffle(String value) {
+        char[] chars = value.toCharArray();
+        for (int index = chars.length - 1; index > 0; index--) {
+            int swapIndex = RANDOM.nextInt(index + 1);
+            char current = chars[index];
+            chars[index] = chars[swapIndex];
+            chars[swapIndex] = current;
+        }
+        return new String(chars);
+    }
+
+    private char randomFromRange(char startInclusive, char endInclusive) {
+        return (char) (startInclusive + RANDOM.nextInt(endInclusive - startInclusive + 1));
     }
 }

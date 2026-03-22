@@ -27,6 +27,22 @@ record LoginRequest(
 ) {
 }
 
+record FindLoginIdRequest(
+        @NotBlank @Size(min = 2, max = 20) String nickname
+) {
+}
+
+record FindLoginIdResponse(
+        boolean found,
+        @Nullable String maskedLoginId
+) {
+}
+
+record ResetPasswordRequest(
+        @Email @NotBlank String email
+) {
+}
+
 record RefreshRequest(
         @NotBlank String refreshToken
 ) {

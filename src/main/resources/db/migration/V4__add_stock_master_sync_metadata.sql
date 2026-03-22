@@ -1,8 +1,16 @@
 ALTER TABLE stock_symbols
-    ADD COLUMN primary_exchange_code VARCHAR(20),
-    ADD COLUMN currency_code VARCHAR(10),
-    ADD COLUMN source_provider VARCHAR(30),
-    ADD COLUMN source_identifier VARCHAR(100),
+    ADD COLUMN primary_exchange_code VARCHAR(20);
+
+ALTER TABLE stock_symbols
+    ADD COLUMN currency_code VARCHAR(10);
+
+ALTER TABLE stock_symbols
+    ADD COLUMN source_provider VARCHAR(30);
+
+ALTER TABLE stock_symbols
+    ADD COLUMN source_identifier VARCHAR(100);
+
+ALTER TABLE stock_symbols
     ADD COLUMN last_master_synced_at TIMESTAMP;
 
 UPDATE stock_symbols

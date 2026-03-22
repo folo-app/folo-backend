@@ -11,4 +11,9 @@ public class LoggingEmailSender implements EmailSender {
     public void sendVerificationCode(String email, String code) {
         log.info("FOLO verification code for {} is {}", email, code);
     }
+
+    @Override
+    public void sendTemporaryPassword(String email, String temporaryPassword) {
+        log.info("FOLO temporary password email requested for {}", email);
+    }
 }

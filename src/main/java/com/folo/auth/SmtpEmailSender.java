@@ -47,6 +47,29 @@ public class SmtpEmailSender implements EmailSender {
         }
     }
 
+    @Override
+    public void sendTemporaryPassword(String email, String temporaryPassword) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(formatFrom());
+        message.setTo(email);
+        message.setSubject("[FOLO] 임시 비밀번호 안내");
+        message.setText("""
+                FOLO 임시 비밀번호 안내입니다.
+
+                임시 비밀번호: %s
+
+                로그인 후 바로 비밀번호를 변경해 주세요.
+                기존 로그인 세션은 모두 종료되었습니다.
+                """.formatted(temporaryPassword));
+
+        try {
+            mailSender.send(message);
+        } catch (MailException exception) {
+            log.error("SMTP temporary password email send failed. to={}, from={}, reason={}", email, appEmailProperties.fromAddress(), exception.getMessage(), exception);
+            throw new ApiException(ErrorCode.INTERNAL_ERROR, "이메일 발송에 실패했습니다.");
+        }
+    }
+
     private String formatFrom() {
         String fromName = appEmailProperties.fromName();
         String fromAddress = appEmailProperties.fromAddress();

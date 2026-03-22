@@ -5,7 +5,6 @@ import com.folo.security.SecurityUtils;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,6 +30,17 @@ public class AuthController {
     @PostMapping("/login")
     public ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ApiResponse.success(authService.login(request), "로그인되었습니다.");
+    }
+
+    @PostMapping("/find-id")
+    public ApiResponse<FindLoginIdResponse> findId(@Valid @RequestBody FindLoginIdRequest request) {
+        return ApiResponse.success(authService.findLoginId(request), "로그인 아이디 조회가 완료되었습니다.");
+    }
+
+    @PostMapping("/password/reset-temp")
+    public ApiResponse<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ApiResponse.successMessage("입력한 이메일로 계정이 존재하면 임시 비밀번호를 전송했습니다.");
     }
 
     @PostMapping("/refresh")
