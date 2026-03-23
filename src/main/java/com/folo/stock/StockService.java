@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -48,11 +49,14 @@ public class StockService {
         }
 
         String normalizedQuery = q.trim();
-        List<StockSymbol> stocks = stockSymbolRepository.searchTopByMarkets(
-                resolveSearchMarkets(market),
+        List<MarketType> markets = resolveSearchMarkets(market);
+        List<StockSymbol> aliasMatches = loadAliasMatches(normalizedQuery, markets);
+        List<StockSymbol> searchMatches = stockSymbolRepository.searchTopByMarkets(
+                markets,
                 normalizedQuery,
                 PageRequest.of(0, 20)
         );
+        List<StockSymbol> stocks = mergeSearchResults(aliasMatches, searchMatches, 20);
 
         Map<Long, PriceSnapshot> snapshotBySymbolId = loadSnapshots(stocks);
         Map<Long, ResolvedStockQuote> liveQuotes = loadLiveQuotes(stocks);
@@ -130,6 +134,36 @@ public class StockService {
         return List.of(MarketType.valueOf(market.toUpperCase()));
     }
 
+    private List<StockSymbol> loadAliasMatches(String query, List<MarketType> markets) {
+        List<String> tickers = StockSearchAliasResolver.resolveTickers(query, markets);
+        if (tickers.isEmpty()) {
+            return List.of();
+        }
+
+        Map<String, Integer> rankByTicker = new LinkedHashMap<>();
+        for (int index = 0; index < tickers.size(); index++) {
+            rankByTicker.put(tickers.get(index).toUpperCase(), index);
+        }
+
+        return stockSymbolRepository.findActiveByMarketsAndTickers(markets, tickers).stream()
+                .sorted((left, right) -> Integer.compare(
+                        rankByTicker.getOrDefault(left.getTicker().toUpperCase(), Integer.MAX_VALUE),
+                        rankByTicker.getOrDefault(right.getTicker().toUpperCase(), Integer.MAX_VALUE)
+                ))
+                .toList();
+    }
+
+    private List<StockSymbol> mergeSearchResults(
+            List<StockSymbol> aliasMatches,
+            List<StockSymbol> searchMatches,
+            int limit
+    ) {
+        LinkedHashMap<Long, StockSymbol> merged = new LinkedHashMap<>();
+        aliasMatches.forEach(symbol -> merged.put(symbol.getId(), symbol));
+        searchMatches.forEach(symbol -> merged.putIfAbsent(symbol.getId(), symbol));
+        return merged.values().stream().limit(limit).toList();
+    }
+
     private Map<Long, PriceSnapshot> loadSnapshots(List<StockSymbol> symbols) {
         if (symbols.isEmpty()) {
             return Map.of();
@@ -188,7 +222,7 @@ public class StockService {
                 stockBrandingService.getPublicLogoUrl(stock),
                 currentPrice,
                 dayReturnRate,
-                stock.getSectorName()
+                StockSectorNormalizer.normalizeStoredSector(stock.getSectorName())
         );
     }
 
@@ -204,7 +238,7 @@ public class StockService {
                 quote.lowPrice(),
                 quote.dayReturn(),
                 quote.dayReturnRate(),
-                stock.getSectorName(),
+                resolveDisplaySector(stock, enrichment),
                 enrichment != null ? enrichment.getIndustryNameRaw() : null,
                 enrichment != null ? enrichment.getClassificationScheme().name() : null,
                 quote.marketUpdatedAt().toString()
@@ -223,10 +257,25 @@ public class StockService {
                 snapshot.getLowPrice(),
                 snapshot.getDayReturn(),
                 snapshot.getDayReturnRate(),
-                stock.getSectorName(),
+                resolveDisplaySector(stock, enrichment),
                 enrichment != null ? enrichment.getIndustryNameRaw() : null,
                 enrichment != null ? enrichment.getClassificationScheme().name() : null,
                 snapshot.getMarketUpdatedAt().toString()
+        );
+    }
+
+    private String resolveDisplaySector(StockSymbol stock, @Nullable StockSymbolEnrichment enrichment) {
+        String normalized = StockSectorNormalizer.normalizeStoredSector(stock.getSectorName());
+        if (normalized != null) {
+            return normalized;
+        }
+        if (enrichment == null) {
+            return null;
+        }
+        return StockSectorNormalizer.normalizeForMetadata(
+                enrichment.getSectorNameRaw(),
+                enrichment.getIndustryNameRaw(),
+                enrichment.getClassificationScheme()
         );
     }
 

@@ -81,11 +81,6 @@ class StockRecommendationServiceTest {
                 eq(MarketType.KRX),
                 org.mockito.ArgumentMatchers.<List<String>>any()
         )).thenReturn(List.of(samsung, skHynix, naver));
-        when(stockSymbolRepository.findActiveByMarketsAndSectorNames(
-                eq(List.of(MarketType.KRX)),
-                eq(List.of("TECHNOLOGY")),
-                any(Pageable.class)
-        )).thenReturn(List.of(samsung, skHynix));
         when(stockSymbolRepository.findActiveByMarkets(eq(List.of(MarketType.KRX)), any(Pageable.class)))
                 .thenReturn(List.of(samsung, skHynix, naver, inverseEtn));
         when(stockSymbolRepository.findAllById(any())).thenReturn(List.of(samsung, skHynix, naver, inverseEtn));

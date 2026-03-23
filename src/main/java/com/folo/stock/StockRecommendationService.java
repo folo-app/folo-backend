@@ -128,8 +128,9 @@ public class StockRecommendationService {
             double invested = positiveDouble(holding.getTotalInvested());
             totalInvested += invested;
             marketWeights.merge(symbol.getMarket(), invested, Double::sum);
-            if (symbol.getSectorName() != null && !symbol.getSectorName().isBlank()) {
-                sectorWeights.merge(symbol.getSectorName().trim().toUpperCase(Locale.ROOT), invested, Double::sum);
+            String sectorKey = StockSectorNormalizer.normalizedSectorKey(symbol.getSectorName());
+            if (sectorKey != null) {
+                sectorWeights.merge(sectorKey, invested, Double::sum);
             }
         }
 
@@ -167,13 +168,19 @@ public class StockRecommendationService {
                 .limit(3)
                 .map(Map.Entry::getKey)
                 .toList();
+        List<StockSymbol> fallbackPool = stockSymbolRepository.findActiveByMarkets(
+                markets,
+                PageRequest.of(0, Math.max(FALLBACK_POOL_SIZE, limit * 8))
+        );
         if (!preferredSectors.isEmpty()) {
-            stockSymbolRepository.findActiveByMarketsAndSectorNames(markets, preferredSectors, PageRequest.of(0, 40)).stream()
+            fallbackPool.stream()
+                    .filter(symbol -> preferredSectors.contains(StockSectorNormalizer.normalizedSectorKey(symbol.getSectorName())))
+                    .limit(40)
                     .map(StockSymbol::getId)
                     .forEach(candidateIds::add);
         }
 
-        stockSymbolRepository.findActiveByMarkets(markets, PageRequest.of(0, Math.max(FALLBACK_POOL_SIZE, limit * 8))).stream()
+        fallbackPool.stream()
                 .map(StockSymbol::getId)
                 .forEach(candidateIds::add);
 
@@ -239,11 +246,9 @@ public class StockRecommendationService {
         }
 
         score += context.marketWeights().getOrDefault(symbol.getMarket(), 0D) * 180D;
-        if (symbol.getSectorName() != null) {
-            score += context.sectorWeights().getOrDefault(
-                    symbol.getSectorName().trim().toUpperCase(Locale.ROOT),
-                    0D
-            ) * 220D;
+        String sectorKey = StockSectorNormalizer.normalizedSectorKey(symbol.getSectorName());
+        if (sectorKey != null) {
+            score += context.sectorWeights().getOrDefault(sectorKey, 0D) * 220D;
         }
 
         if (symbol.getAnnualDividendYield() != null) {
