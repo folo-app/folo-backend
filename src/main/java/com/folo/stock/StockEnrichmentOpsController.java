@@ -23,7 +23,6 @@ public class StockEnrichmentOpsController {
     private final StockDividendEnrichmentService stockDividendEnrichmentService;
     private final StockMetadataEnrichmentService stockMetadataEnrichmentService;
     private final StockIssuerProfileSyncService stockIssuerProfileSyncService;
-    private final KrxLogoCollectorService krxLogoCollectorService;
     private final KisDomesticDividendDebugService kisDomesticDividendDebugService;
 
     public StockEnrichmentOpsController(
@@ -31,14 +30,12 @@ public class StockEnrichmentOpsController {
             StockDividendEnrichmentService stockDividendEnrichmentService,
             StockMetadataEnrichmentService stockMetadataEnrichmentService,
             StockIssuerProfileSyncService stockIssuerProfileSyncService,
-            KrxLogoCollectorService krxLogoCollectorService,
             KisDomesticDividendDebugService kisDomesticDividendDebugService
     ) {
         this.appOpsProperties = appOpsProperties;
         this.stockDividendEnrichmentService = stockDividendEnrichmentService;
         this.stockMetadataEnrichmentService = stockMetadataEnrichmentService;
         this.stockIssuerProfileSyncService = stockIssuerProfileSyncService;
-        this.krxLogoCollectorService = krxLogoCollectorService;
         this.kisDomesticDividendDebugService = kisDomesticDividendDebugService;
     }
 
@@ -100,29 +97,6 @@ public class StockEnrichmentOpsController {
                         syncMode == SyncMode.PRIORITY ? 0 : request.stockSymbolIds().size()
                 ),
                 "OPENDART issuer profile sync가 실행되었습니다."
-        );
-    }
-
-    @PostMapping("/logos/sync")
-    public ApiResponse<StockEnrichmentSyncResponse> syncLogos(
-            @RequestHeader(name = TRIGGER_SECRET_HEADER, required = false) String triggerSecret,
-            @RequestBody(required = false) StockEnrichmentSyncRequest request
-    ) {
-        authorize(triggerSecret);
-        SyncMode syncMode = resolveSyncMode(request);
-        if (syncMode == SyncMode.PRIORITY) {
-            krxLogoCollectorService.syncPrioritySymbols();
-        } else {
-            krxLogoCollectorService.syncSymbols(request.stockSymbolIds());
-        }
-
-        return ApiResponse.success(
-                new StockEnrichmentSyncResponse(
-                        "BRANDING",
-                        syncMode.name(),
-                        syncMode == SyncMode.PRIORITY ? 0 : request.stockSymbolIds().size()
-                ),
-                "KRX 로고 sync가 실행되었습니다."
         );
     }
 

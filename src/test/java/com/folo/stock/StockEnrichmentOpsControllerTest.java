@@ -34,9 +34,6 @@ class StockEnrichmentOpsControllerTest {
     private StockIssuerProfileSyncService stockIssuerProfileSyncService;
 
     @MockBean
-    private KrxLogoCollectorService krxLogoCollectorService;
-
-    @MockBean
     private KisDomesticDividendDebugService kisDomesticDividendDebugService;
 
     @Test
@@ -90,19 +87,6 @@ class StockEnrichmentOpsControllerTest {
                 .andExpect(jsonPath("$.data.requestedCount").value(0));
 
         verify(stockIssuerProfileSyncService).syncPrioritySymbols();
-    }
-
-    @Test
-    void logoSyncEndpointRunsPrioritySyncWhenNoIdsProvided() throws Exception {
-        mockMvc.perform(post("/internal/stock-enrichment/logos/sync")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-Internal-Trigger-Secret", "test-ops-secret"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.scope").value("BRANDING"))
-                .andExpect(jsonPath("$.data.mode").value("PRIORITY"))
-                .andExpect(jsonPath("$.data.requestedCount").value(0));
-
-        verify(krxLogoCollectorService).syncPrioritySymbols();
     }
 
     @Test
