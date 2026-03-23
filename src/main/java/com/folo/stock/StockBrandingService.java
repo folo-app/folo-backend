@@ -5,6 +5,7 @@ import com.folo.config.MarketDataSyncProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
@@ -12,7 +13,9 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -24,18 +27,32 @@ public class StockBrandingService {
 
     private final RestClient restClient;
     private final MarketDataSyncProperties properties;
+    private final StockBrandAssetRepository stockBrandAssetRepository;
+    private final StockSymbolRepository stockSymbolRepository;
+    private final KrxBrandFamilyResolver krxBrandFamilyResolver;
     private final Map<String, BrandingAsset> brandingCache = new ConcurrentHashMap<>();
     private final Map<String, LogoPayload> logoCache = new ConcurrentHashMap<>();
 
     public StockBrandingService(
             RestClient.Builder restClientBuilder,
-            MarketDataSyncProperties properties
+            MarketDataSyncProperties properties,
+            StockBrandAssetRepository stockBrandAssetRepository,
+            StockSymbolRepository stockSymbolRepository,
+            KrxBrandFamilyResolver krxBrandFamilyResolver
     ) {
         this.restClient = restClientBuilder.build();
         this.properties = properties;
+        this.stockBrandAssetRepository = stockBrandAssetRepository;
+        this.stockSymbolRepository = stockSymbolRepository;
+        this.krxBrandFamilyResolver = krxBrandFamilyResolver;
     }
 
     public String getPublicLogoUrl(StockSymbol stock) {
+        String storedLogoUrl = resolveStoredLogoUrl(stock);
+        if (StringUtils.hasText(storedLogoUrl)) {
+            return storedLogoUrl;
+        }
+
         if (!supportsBranding(stock.getMarket())) {
             return null;
         }
@@ -48,6 +65,102 @@ public class StockBrandingService {
             publicUrl.append("&micCode=").append(micCode);
         }
         return publicUrl.toString();
+    }
+
+    @Nullable
+    private String resolveStoredLogoUrl(StockSymbol stock) {
+        if (stock.getId() == null) {
+            return null;
+        }
+
+        if (stock.getMarket() == MarketType.KRX) {
+            String familyLogoUrl = resolveKrxFamilyLogoUrl(stock);
+            if (StringUtils.hasText(familyLogoUrl)) {
+                return familyLogoUrl;
+            }
+
+            String commonStockLogoUrl = resolvePreferredShareLogoUrl(stock);
+            if (StringUtils.hasText(commonStockLogoUrl)) {
+                return commonStockLogoUrl;
+            }
+        }
+
+        return resolveDirectStoredLogoUrl(stock.getId());
+    }
+
+    @Nullable
+    private String resolveKrxFamilyLogoUrl(StockSymbol stock) {
+        KrxBrandFamilyResolver.KrxBrandFamily family = krxBrandFamilyResolver.resolve(stock);
+        if (family == null) {
+            return null;
+        }
+
+        List<StockSymbol> representativeCandidates = stockSymbolRepository.findByMarketAndTickerInAndActiveTrue(
+                MarketType.KRX,
+                family.representativeTickers()
+        );
+        if (representativeCandidates.isEmpty()) {
+            return null;
+        }
+
+        Map<Long, StockBrandAsset> assetsBySymbolId = stockBrandAssetRepository.findAllByStockSymbolIdIn(
+                representativeCandidates.stream().map(StockSymbol::getId).toList()
+        ).stream().collect(java.util.stream.Collectors.toMap(
+                asset -> asset.getStockSymbol().getId(),
+                asset -> asset
+        ));
+
+        for (String representativeTicker : family.representativeTickers()) {
+            StockSymbol representative = representativeCandidates.stream()
+                    .filter(symbol -> representativeTicker.equalsIgnoreCase(symbol.getTicker()))
+                    .findFirst()
+                    .orElse(null);
+            if (representative == null) {
+                continue;
+            }
+
+            String representativeUrl = resolvePublicUrl(assetsBySymbolId.get(representative.getId()));
+            if (StringUtils.hasText(representativeUrl)) {
+                return representativeUrl;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private String resolvePreferredShareLogoUrl(StockSymbol stock) {
+        return resolveCommonStock(stock)
+                .map(StockSymbol::getId)
+                .map(this::resolveDirectStoredLogoUrl)
+                .filter(StringUtils::hasText)
+                .orElse(null);
+    }
+
+    private Optional<StockSymbol> resolveCommonStock(StockSymbol stock) {
+        String commonStockName = krxBrandFamilyResolver.resolveCommonStockName(stock.getName());
+        if (!StringUtils.hasText(commonStockName)) {
+            return Optional.empty();
+        }
+        return stockSymbolRepository.findByMarketAndName(MarketType.KRX, commonStockName);
+    }
+
+    @Nullable
+    private String resolveDirectStoredLogoUrl(@Nullable Long stockSymbolId) {
+        if (stockSymbolId == null) {
+            return null;
+        }
+        return stockBrandAssetRepository.findByStockSymbolId(stockSymbolId)
+                .map(this::resolvePublicUrl)
+                .filter(StringUtils::hasText)
+                .orElse(null);
+    }
+
+    @Nullable
+    private String resolvePublicUrl(@Nullable StockBrandAsset asset) {
+        if (asset == null || !StringUtils.hasText(asset.getPublicUrl())) {
+            return null;
+        }
+        return asset.getPublicUrl();
     }
 
     public LogoPayload fetchLogo(String ticker, MarketType market) {

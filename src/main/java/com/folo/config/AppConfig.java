@@ -13,7 +13,8 @@ import org.springframework.context.annotation.Configuration;
         FileStorageProperties.class,
         KisStubProperties.class,
         KisOAuthProperties.class,
-        MarketDataSyncProperties.class
+        MarketDataSyncProperties.class,
+        OpendartProperties.class
 })
 public class AppConfig {
 }

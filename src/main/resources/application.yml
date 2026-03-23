@@ -72,6 +72,10 @@ security:
     secret: ${FIELD_ENCRYPTION_SECRET:please-change-this-field-encryption-secret}
 
 integration:
+  opendart:
+    enabled: ${OPENDART_ENABLED:false}
+    api-key: ${OPENDART_API_KEY:}
+    base-url: ${OPENDART_BASE_URL:https://opendart.fss.or.kr/api}
   kis:
     stub-file: ${KIS_STUB_FILE:}
     oauth:

@@ -3,5 +3,7 @@ package com.folo.stock;
 public enum StockSymbolSyncScope {
     MASTER,
     DIVIDEND,
-    ENRICHMENT
+    ENRICHMENT,
+    ISSUER_PROFILE,
+    BRANDING
 }

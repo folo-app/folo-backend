@@ -31,6 +31,12 @@ class StockEnrichmentOpsControllerTest {
     private StockMetadataEnrichmentService stockMetadataEnrichmentService;
 
     @MockBean
+    private StockIssuerProfileSyncService stockIssuerProfileSyncService;
+
+    @MockBean
+    private KrxLogoCollectorService krxLogoCollectorService;
+
+    @MockBean
     private KisDomesticDividendDebugService kisDomesticDividendDebugService;
 
     @Test
@@ -71,6 +77,32 @@ class StockEnrichmentOpsControllerTest {
                 .andExpect(jsonPath("$.data.requestedCount").value(2));
 
         verify(stockMetadataEnrichmentService).syncSymbols(java.util.List.of(11L, 22L));
+    }
+
+    @Test
+    void issuerProfileSyncEndpointRunsPrioritySyncWhenNoIdsProvided() throws Exception {
+        mockMvc.perform(post("/internal/stock-enrichment/issuer-profiles/sync")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-Internal-Trigger-Secret", "test-ops-secret"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.scope").value("ISSUER_PROFILE"))
+                .andExpect(jsonPath("$.data.mode").value("PRIORITY"))
+                .andExpect(jsonPath("$.data.requestedCount").value(0));
+
+        verify(stockIssuerProfileSyncService).syncPrioritySymbols();
+    }
+
+    @Test
+    void logoSyncEndpointRunsPrioritySyncWhenNoIdsProvided() throws Exception {
+        mockMvc.perform(post("/internal/stock-enrichment/logos/sync")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-Internal-Trigger-Secret", "test-ops-secret"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.scope").value("BRANDING"))
+                .andExpect(jsonPath("$.data.mode").value("PRIORITY"))
+                .andExpect(jsonPath("$.data.requestedCount").value(0));
+
+        verify(krxLogoCollectorService).syncPrioritySymbols();
     }
 
     @Test
