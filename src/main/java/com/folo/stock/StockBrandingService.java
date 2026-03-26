@@ -1,10 +1,12 @@
 package com.folo.stock;
 
 import com.folo.common.enums.MarketType;
+import com.folo.config.FileStorageProperties;
 import com.folo.config.MarketDataSyncProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
@@ -12,8 +14,15 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -21,32 +30,40 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class StockBrandingService {
 
     private static final Logger log = LoggerFactory.getLogger(StockBrandingService.class);
+    private static final Pattern KRX_PREFERRED_STOCK_NAME_PATTERN =
+            Pattern.compile(".*(?:\\d+)?우(?:[BC])?(?:\\([^)]*\\))?$");
 
     private final RestClient restClient;
     private final MarketDataSyncProperties properties;
+    private final FileStorageProperties fileStorageProperties;
+    private final StockSymbolRepository stockSymbolRepository;
     private final Map<String, BrandingAsset> brandingCache = new ConcurrentHashMap<>();
     private final Map<String, LogoPayload> logoCache = new ConcurrentHashMap<>();
 
     public StockBrandingService(
             RestClient.Builder restClientBuilder,
-            MarketDataSyncProperties properties
+            MarketDataSyncProperties properties,
+            FileStorageProperties fileStorageProperties,
+            StockSymbolRepository stockSymbolRepository
     ) {
         this.restClient = restClientBuilder.build();
         this.properties = properties;
+        this.fileStorageProperties = fileStorageProperties;
+        this.stockSymbolRepository = stockSymbolRepository;
     }
 
     public String getPublicLogoUrl(StockSymbol stock) {
         if (stock.getMarket() == MarketType.KRX) {
-            return null;
+            return resolveLocalLogoPath(stock).isPresent()
+                    ? buildPublicLogoUrl(stock, null)
+                    : null;
         }
 
         if (!supportsBranding(stock.getMarket())) {
             return null;
         }
 
-        StringBuilder publicUrl = new StringBuilder(
-                "/stocks/%s/logo?market=%s".formatted(stock.getTicker(), stock.getMarket())
-        );
+        StringBuilder publicUrl = new StringBuilder(buildPublicLogoUrl(stock, null));
         String micCode = resolveTwelveDataMicCode(stock);
         if (StringUtils.hasText(micCode)) {
             publicUrl.append("&micCode=").append(micCode);
@@ -59,6 +76,10 @@ public class StockBrandingService {
     }
 
     public LogoPayload fetchLogo(String ticker, MarketType market, String micCode) {
+        if (market == MarketType.KRX) {
+            return fetchLocalLogo(ticker);
+        }
+
         if (!supportsBranding(market)) {
             throw new ResponseStatusException(NOT_FOUND, "브랜딩 로고를 찾을 수 없습니다.");
         }
@@ -103,8 +124,131 @@ public class StockBrandingService {
         return payload;
     }
 
+    private String buildPublicLogoUrl(StockSymbol stock, String micCode) {
+        StringBuilder publicUrl = new StringBuilder(
+                "/stocks/%s/logo?market=%s".formatted(stock.getTicker(), stock.getMarket())
+        );
+        if (StringUtils.hasText(micCode)) {
+            publicUrl.append("&micCode=").append(micCode);
+        }
+        return publicUrl.toString();
+    }
+
     private boolean supportsBranding(MarketType market) {
         return market != MarketType.KRX && (isTwelveDataConfigured() || supportsPolygonFallback(market));
+    }
+
+    private LogoPayload fetchLocalLogo(String ticker) {
+        Path logoPath = resolveLocalLogoPath(ticker, findKrxStockSymbol(ticker).orElse(null))
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "브랜딩 로고를 찾을 수 없습니다."));
+        try {
+            byte[] bytes = Files.readAllBytes(logoPath);
+            if (bytes.length == 0) {
+                throw new ResponseStatusException(NOT_FOUND, "브랜딩 로고를 찾을 수 없습니다.");
+            }
+            return new LogoPayload(bytes, resolveLocalContentType(logoPath));
+        } catch (IOException exception) {
+            throw new IllegalStateException("로컬 브랜딩 로고 파일을 읽을 수 없습니다: " + logoPath, exception);
+        }
+    }
+
+    private Optional<Path> resolveLocalLogoPath(StockSymbol stock) {
+        return resolveLocalLogoPath(stock.getTicker(), stock);
+    }
+
+    private Optional<Path> resolveLocalLogoPath(String ticker, @Nullable StockSymbol stock) {
+        if (!StringUtils.hasText(fileStorageProperties.stockLogoRootDir())
+                || !StringUtils.hasText(ticker)) {
+            return Optional.empty();
+        }
+
+        Path logoRoot = Path.of(fileStorageProperties.stockLogoRootDir())
+                .toAbsolutePath()
+                .normalize();
+        List<String> tickerCandidates = resolveLocalLogoTickerCandidates(ticker, stock);
+
+        for (String normalizedTicker : tickerCandidates) {
+            for (String extension : new String[]{"png", "svg", "webp", "jpg", "jpeg"}) {
+                Optional<Path> directMatch = existingFile(
+                        logoRoot.resolve("%s.%s".formatted(normalizedTicker, extension))
+                );
+                if (directMatch.isPresent()) {
+                    return directMatch;
+                }
+
+                Optional<Path> kospiMatch = existingFile(
+                        logoRoot.resolve("KOSPI-logo").resolve("%s.%s".formatted(normalizedTicker, extension))
+                );
+                if (kospiMatch.isPresent()) {
+                    return kospiMatch;
+                }
+
+                Optional<Path> kosdaqMatch = existingFile(
+                        logoRoot.resolve("KOSDAQ-logo").resolve("%s.%s".formatted(normalizedTicker, extension))
+                );
+                if (kosdaqMatch.isPresent()) {
+                    return kosdaqMatch;
+                }
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private List<String> resolveLocalLogoTickerCandidates(String ticker, @Nullable StockSymbol stock) {
+        String normalizedTicker = ticker.trim().toUpperCase();
+        LinkedHashSet<String> candidates = new LinkedHashSet<>();
+        candidates.add(normalizedTicker);
+
+        if (normalizedTicker.matches("^\\d{5}[A-Z]$")) {
+            candidates.add(normalizedTicker.substring(0, 5) + "0");
+        }
+
+        if (isKrxNumericPreferredTicker(normalizedTicker, stock)) {
+            candidates.add(normalizedTicker.substring(0, 5) + "0");
+        }
+
+        return List.copyOf(candidates);
+    }
+
+    private Optional<StockSymbol> findKrxStockSymbol(String ticker) {
+        return stockSymbolRepository.findByMarketAndTicker(MarketType.KRX, ticker);
+    }
+
+    private boolean isKrxNumericPreferredTicker(String ticker, @Nullable StockSymbol stock) {
+        return stock != null
+                && stock.getMarket() == MarketType.KRX
+                && ticker.matches("^\\d{6}$")
+                && !ticker.endsWith("0")
+                && isPreferredStockName(stock.getName());
+    }
+
+    private boolean isPreferredStockName(@Nullable String name) {
+        return StringUtils.hasText(name)
+                && KRX_PREFERRED_STOCK_NAME_PATTERN.matcher(name.trim()).matches();
+    }
+
+    private Optional<Path> existingFile(Path path) {
+        return Files.isRegularFile(path) ? Optional.of(path) : Optional.empty();
+    }
+
+    private String resolveLocalContentType(Path logoPath) throws IOException {
+        String contentType = Files.probeContentType(logoPath);
+        if (StringUtils.hasText(contentType)) {
+            return contentType;
+        }
+
+        String fileName = logoPath.getFileName().toString().toLowerCase();
+        if (fileName.endsWith(".svg")) {
+            return "image/svg+xml";
+        }
+        if (fileName.endsWith(".webp")) {
+            return "image/webp";
+        }
+        if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
+            return "image/jpeg";
+        }
+        return "image/png";
     }
 
     private BrandingAsset resolveBrandingAsset(String ticker, MarketType market, String micCode) {

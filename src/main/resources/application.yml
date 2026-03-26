@@ -52,6 +52,7 @@ app:
     trigger-secret: ${OPS_TRIGGER_SECRET:}
   storage:
     upload-root-dir: ${FILE_STORAGE_ROOT_DIR:/tmp/folo-uploads}
+    stock-logo-root-dir: ${FILE_STORAGE_STOCK_LOGO_ROOT_DIR:./logo}
 
 management:
   endpoints:
