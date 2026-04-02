@@ -53,22 +53,9 @@ public class StockBrandingService {
     }
 
     public String getPublicLogoUrl(StockSymbol stock) {
-        if (stock.getMarket() == MarketType.KRX) {
-            return resolveLocalLogoPath(stock).isPresent()
-                    ? buildPublicLogoUrl(stock, null)
-                    : null;
-        }
-
-        if (!supportsBranding(stock.getMarket())) {
-            return null;
-        }
-
-        StringBuilder publicUrl = new StringBuilder(buildPublicLogoUrl(stock, null));
-        String micCode = resolveTwelveDataMicCode(stock);
-        if (StringUtils.hasText(micCode)) {
-            publicUrl.append("&micCode=").append(micCode);
-        }
-        return publicUrl.toString();
+        return resolveLocalLogoPath(stock).isPresent()
+                ? buildPublicLogoUrl(stock, null)
+                : null;
     }
 
     public LogoPayload fetchLogo(String ticker, MarketType market) {
@@ -76,52 +63,7 @@ public class StockBrandingService {
     }
 
     public LogoPayload fetchLogo(String ticker, MarketType market, String micCode) {
-        if (market == MarketType.KRX) {
-            return fetchLocalLogo(ticker);
-        }
-
-        if (!supportsBranding(market)) {
-            throw new ResponseStatusException(NOT_FOUND, "브랜딩 로고를 찾을 수 없습니다.");
-        }
-
-        String cacheKey = "%s:%s:%s".formatted(
-                market,
-                ticker.toUpperCase(),
-                micCode == null ? "" : micCode.toUpperCase()
-        );
-        LogoPayload cached = logoCache.get(cacheKey);
-        if (cached != null) {
-            return cached;
-        }
-
-        BrandingAsset brandingAsset = brandingCache.computeIfAbsent(
-                cacheKey,
-                key -> resolveBrandingAsset(ticker, market, micCode)
-        );
-        String remoteUrl = brandingAsset.bestImageUrl();
-        if (!StringUtils.hasText(remoteUrl)) {
-            throw new ResponseStatusException(NOT_FOUND, "브랜딩 로고를 찾을 수 없습니다.");
-        }
-
-        URI requestUri = buildLogoDownloadUri(remoteUrl);
-
-        ResponseEntity<byte[]> response = restClient.get()
-                .uri(requestUri)
-                .retrieve()
-                .toEntity(byte[].class);
-
-        byte[] body = response.getBody();
-        if (body == null || body.length == 0) {
-            throw new ResponseStatusException(NOT_FOUND, "브랜딩 로고를 찾을 수 없습니다.");
-        }
-
-        String contentType = response.getHeaders().getContentType() != null
-                ? response.getHeaders().getContentType().toString()
-                : "image/png";
-
-        LogoPayload payload = new LogoPayload(body, contentType);
-        logoCache.put(cacheKey, payload);
-        return payload;
+        return fetchLocalLogo(ticker, market);
     }
 
     private String buildPublicLogoUrl(StockSymbol stock, String micCode) {
@@ -138,8 +80,12 @@ public class StockBrandingService {
         return market != MarketType.KRX && (isTwelveDataConfigured() || supportsPolygonFallback(market));
     }
 
-    private LogoPayload fetchLocalLogo(String ticker) {
-        Path logoPath = resolveLocalLogoPath(ticker, findKrxStockSymbol(ticker).orElse(null))
+    private LogoPayload fetchLocalLogo(String ticker, MarketType market) {
+        Path logoPath = resolveLocalLogoPath(
+                ticker,
+                findStockSymbol(market, ticker).orElse(null),
+                market
+        )
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "브랜딩 로고를 찾을 수 없습니다."));
         try {
             byte[] bytes = Files.readAllBytes(logoPath);
@@ -153,10 +99,10 @@ public class StockBrandingService {
     }
 
     private Optional<Path> resolveLocalLogoPath(StockSymbol stock) {
-        return resolveLocalLogoPath(stock.getTicker(), stock);
+        return resolveLocalLogoPath(stock.getTicker(), stock, stock.getMarket());
     }
 
-    private Optional<Path> resolveLocalLogoPath(String ticker, @Nullable StockSymbol stock) {
+    private Optional<Path> resolveLocalLogoPath(String ticker, @Nullable StockSymbol stock, @Nullable MarketType market) {
         if (!StringUtils.hasText(fileStorageProperties.stockLogoRootDir())
                 || !StringUtils.hasText(ticker)) {
             return Optional.empty();
@@ -189,6 +135,15 @@ public class StockBrandingService {
                 if (kosdaqMatch.isPresent()) {
                     return kosdaqMatch;
                 }
+
+                if (isUsMarket(market)) {
+                    Optional<Path> usLogoMatch = existingFile(
+                            logoRoot.resolve("us-logo").resolve("%s.%s".formatted(normalizedTicker, extension))
+                    );
+                    if (usLogoMatch.isPresent()) {
+                        return usLogoMatch;
+                    }
+                }
             }
         }
 
@@ -211,8 +166,8 @@ public class StockBrandingService {
         return List.copyOf(candidates);
     }
 
-    private Optional<StockSymbol> findKrxStockSymbol(String ticker) {
-        return stockSymbolRepository.findByMarketAndTicker(MarketType.KRX, ticker);
+    private Optional<StockSymbol> findStockSymbol(MarketType market, String ticker) {
+        return stockSymbolRepository.findByMarketAndTicker(market, ticker);
     }
 
     private boolean isKrxNumericPreferredTicker(String ticker, @Nullable StockSymbol stock) {
@@ -226,6 +181,12 @@ public class StockBrandingService {
     private boolean isPreferredStockName(@Nullable String name) {
         return StringUtils.hasText(name)
                 && KRX_PREFERRED_STOCK_NAME_PATTERN.matcher(name.trim()).matches();
+    }
+
+    private boolean isUsMarket(@Nullable MarketType market) {
+        return market == MarketType.NASDAQ
+                || market == MarketType.NYSE
+                || market == MarketType.AMEX;
     }
 
     private Optional<Path> existingFile(Path path) {

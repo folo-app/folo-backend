@@ -14,8 +14,8 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -36,25 +36,41 @@ class StockBrandingServiceTest {
     }
 
     @Test
-    void getPublicLogoUrlReturnsDynamicLogoEndpointForUsStocks() {
+    void getPublicLogoUrlReturnsNullForUsStocksWhenLocalLogoDoesNotExist() {
         StockBrandingService service = new StockBrandingService(
                 RestClient.builder(),
-                properties(true, false),
+                properties(false, false),
                 storageProperties(null),
                 stockSymbolRepository()
         );
 
         StockSymbol stockSymbol = stock(12L, "AAPL", "Apple Inc.", MarketType.NASDAQ);
-        stockSymbol.setPrimaryExchangeCode("NAS");
+
+        assertThat(service.getPublicLogoUrl(stockSymbol)).isNull();
+    }
+
+    @Test
+    void getPublicLogoUrlReturnsEndpointForUsStocksWhenLocalLogoExists(@TempDir Path tempDir) throws IOException {
+        Files.createDirectories(tempDir.resolve("us-logo"));
+        Files.write(tempDir.resolve("us-logo/AAPL.png"), new byte[]{1, 2, 3});
+
+        StockBrandingService service = new StockBrandingService(
+                RestClient.builder(),
+                properties(false, false),
+                storageProperties(tempDir.toString()),
+                stockSymbolRepository()
+        );
+
+        StockSymbol stockSymbol = stock(12L, "AAPL", "Apple Inc.", MarketType.NASDAQ);
 
         assertThat(service.getPublicLogoUrl(stockSymbol))
-                .isEqualTo("/stocks/AAPL/logo?market=NASDAQ&micCode=XNAS");
+                .isEqualTo("/stocks/AAPL/logo?market=NASDAQ");
     }
 
     @Test
     void getPublicLogoUrlReturnsEndpointForKrxStocksWhenLocalLogoExists(@TempDir Path tempDir) throws IOException {
         Files.createDirectories(tempDir.resolve("KOSPI-logo"));
-        Files.write(tempDir.resolve("KOSPI-logo/005930.png"), new byte[]{1, 2, 3});
+        Files.write(tempDir.resolve("KOSPI-logo/005930.png"), new byte[]{4, 5, 6});
 
         StockBrandingService service = new StockBrandingService(
                 RestClient.builder(),
@@ -72,7 +88,7 @@ class StockBrandingServiceTest {
     @Test
     void fetchLogoReturnsLocalKrxLogoPayload(@TempDir Path tempDir) throws IOException {
         Files.createDirectories(tempDir.resolve("KOSDAQ-logo"));
-        byte[] bytes = new byte[]{4, 5, 6};
+        byte[] bytes = new byte[]{7, 8, 9};
         Files.write(tempDir.resolve("KOSDAQ-logo/066980.png"), bytes);
 
         StockSymbolRepository stockSymbolRepository = stockSymbolRepository(
@@ -92,9 +108,28 @@ class StockBrandingServiceTest {
     }
 
     @Test
+    void fetchLogoReturnsLocalUsLogoPayload(@TempDir Path tempDir) throws IOException {
+        Files.createDirectories(tempDir.resolve("us-logo"));
+        byte[] bytes = new byte[]{10, 11, 12};
+        Files.write(tempDir.resolve("us-logo/AAPL.png"), bytes);
+
+        StockBrandingService service = new StockBrandingService(
+                RestClient.builder(),
+                properties(false, false),
+                storageProperties(tempDir.toString()),
+                stockSymbolRepository()
+        );
+
+        StockBrandingService.LogoPayload payload = service.fetchLogo("AAPL", MarketType.NASDAQ);
+
+        assertThat(payload.bytes()).isEqualTo(bytes);
+        assertThat(payload.contentType()).isEqualTo("image/png");
+    }
+
+    @Test
     void getPublicLogoUrlReturnsEndpointForKrxPreferredTickerWhenBaseLogoExists(@TempDir Path tempDir) throws IOException {
         Files.createDirectories(tempDir.resolve("KOSPI-logo"));
-        Files.write(tempDir.resolve("KOSPI-logo/000880.png"), new byte[]{7, 8, 9});
+        Files.write(tempDir.resolve("KOSPI-logo/000880.png"), new byte[]{13, 14, 15});
 
         StockBrandingService service = new StockBrandingService(
                 RestClient.builder(),
@@ -112,7 +147,7 @@ class StockBrandingServiceTest {
     @Test
     void fetchLogoFallsBackToBaseTickerForKrxPreferredTicker(@TempDir Path tempDir) throws IOException {
         Files.createDirectories(tempDir.resolve("KOSPI-logo"));
-        byte[] bytes = new byte[]{10, 11, 12};
+        byte[] bytes = new byte[]{16, 17, 18};
         Files.write(tempDir.resolve("KOSPI-logo/000880.png"), bytes);
 
         StockSymbolRepository stockSymbolRepository = stockSymbolRepository(
@@ -134,7 +169,7 @@ class StockBrandingServiceTest {
     @Test
     void getPublicLogoUrlReturnsEndpointForNumericKrxPreferredTickerWhenBaseLogoExists(@TempDir Path tempDir) throws IOException {
         Files.createDirectories(tempDir.resolve("KOSPI-logo"));
-        Files.write(tempDir.resolve("KOSPI-logo/009830.png"), new byte[]{13, 14, 15});
+        Files.write(tempDir.resolve("KOSPI-logo/009830.png"), new byte[]{19, 20, 21});
 
         StockBrandingService service = new StockBrandingService(
                 RestClient.builder(),
@@ -152,7 +187,7 @@ class StockBrandingServiceTest {
     @Test
     void fetchLogoFallsBackToBaseTickerForNumericKrxPreferredTicker(@TempDir Path tempDir) throws IOException {
         Files.createDirectories(tempDir.resolve("KOSPI-logo"));
-        byte[] bytes = new byte[]{16, 17, 18};
+        byte[] bytes = new byte[]{22, 23, 24};
         Files.write(tempDir.resolve("KOSPI-logo/003530.png"), bytes);
 
         StockSymbol preferredSymbol = stock(42L, "003535", "한화투자증권우", MarketType.KRX);
@@ -200,7 +235,7 @@ class StockBrandingServiceTest {
 
     private StockSymbolRepository stockSymbolRepository(StockSymbol... symbols) {
         StockSymbolRepository repository = mock(StockSymbolRepository.class);
-        when(repository.findByMarketAndTicker(eq(MarketType.KRX), anyString())).thenReturn(Optional.empty());
+        when(repository.findByMarketAndTicker(any(MarketType.class), anyString())).thenReturn(Optional.empty());
         for (StockSymbol symbol : symbols) {
             when(repository.findByMarketAndTicker(symbol.getMarket(), symbol.getTicker()))
                     .thenReturn(Optional.of(symbol));
