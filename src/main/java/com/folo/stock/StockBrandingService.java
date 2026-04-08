@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -30,9 +29,6 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class StockBrandingService {
 
     private static final Logger log = LoggerFactory.getLogger(StockBrandingService.class);
-    private static final Pattern KRX_PREFERRED_STOCK_NAME_PATTERN =
-            Pattern.compile(".*(?:\\d+)?우(?:[BC])?(?:\\([^)]*\\))?$");
-
     private final RestClient restClient;
     private final MarketDataSyncProperties properties;
     private final FileStorageProperties fileStorageProperties;
@@ -155,12 +151,12 @@ public class StockBrandingService {
         LinkedHashSet<String> candidates = new LinkedHashSet<>();
         candidates.add(normalizedTicker);
 
-        if (normalizedTicker.matches("^\\d{5}[A-Z]$")) {
-            candidates.add(normalizedTicker.substring(0, 5) + "0");
-        }
-
-        if (isKrxNumericPreferredTicker(normalizedTicker, stock)) {
-            candidates.add(normalizedTicker.substring(0, 5) + "0");
+        String baseTickerCandidate = KrxPreferredStockSupport.baseTickerCandidate(
+                normalizedTicker,
+                stock != null ? stock.getName() : null
+        );
+        if (StringUtils.hasText(baseTickerCandidate)) {
+            candidates.add(baseTickerCandidate);
         }
 
         return List.copyOf(candidates);
@@ -175,12 +171,11 @@ public class StockBrandingService {
                 && stock.getMarket() == MarketType.KRX
                 && ticker.matches("^\\d{6}$")
                 && !ticker.endsWith("0")
-                && isPreferredStockName(stock.getName());
+                && KrxPreferredStockSupport.isPreferredStockName(stock.getName());
     }
 
     private boolean isPreferredStockName(@Nullable String name) {
-        return StringUtils.hasText(name)
-                && KRX_PREFERRED_STOCK_NAME_PATTERN.matcher(name.trim()).matches();
+        return KrxPreferredStockSupport.isPreferredStockName(name);
     }
 
     private boolean isUsMarket(@Nullable MarketType market) {

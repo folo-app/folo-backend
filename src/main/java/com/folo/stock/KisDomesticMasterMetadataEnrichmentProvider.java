@@ -4,6 +4,7 @@ import com.folo.common.enums.MarketType;
 import com.folo.config.MarketDataSyncProperties;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -18,6 +19,7 @@ import java.nio.file.attribute.FileTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@Order(10)
 @Component
 public class KisDomesticMasterMetadataEnrichmentProvider implements StockMetadataEnrichmentProvider {
 

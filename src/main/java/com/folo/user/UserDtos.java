@@ -1,5 +1,6 @@
 package com.folo.user;
 
+import com.folo.common.enums.CurrencyCode;
 import com.folo.common.enums.PortfolioVisibility;
 import com.folo.common.enums.ReturnVisibility;
 import jakarta.validation.constraints.NotBlank;
@@ -17,6 +18,7 @@ record MyProfileResponse(
         long followingCount,
         PortfolioVisibility portfolioVisibility,
         ReturnVisibility returnVisibility,
+        CurrencyCode displayCurrency,
         String createdAt
 ) {
 }
@@ -26,7 +28,8 @@ record UpdateMyProfileRequest(
         @Nullable @Size(max = 1000) String profileImage,
         @Nullable @Size(max = 500) String bio,
         @Nullable PortfolioVisibility portfolioVisibility,
-        @Nullable ReturnVisibility returnVisibility
+        @Nullable ReturnVisibility returnVisibility,
+        @Nullable CurrencyCode displayCurrency
 ) {
 }
 

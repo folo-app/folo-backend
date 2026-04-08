@@ -128,7 +128,7 @@ public class StockRecommendationService {
             double invested = positiveDouble(holding.getTotalInvested());
             totalInvested += invested;
             marketWeights.merge(symbol.getMarket(), invested, Double::sum);
-            String sectorKey = StockSectorNormalizer.normalizedSectorKey(symbol.getSectorName());
+            String sectorKey = resolveSectorKey(symbol);
             if (sectorKey != null) {
                 sectorWeights.merge(sectorKey, invested, Double::sum);
             }
@@ -174,7 +174,7 @@ public class StockRecommendationService {
         );
         if (!preferredSectors.isEmpty()) {
             fallbackPool.stream()
-                    .filter(symbol -> preferredSectors.contains(StockSectorNormalizer.normalizedSectorKey(symbol.getSectorName())))
+                    .filter(symbol -> preferredSectors.contains(resolveSectorKey(symbol)))
                     .limit(40)
                     .map(StockSymbol::getId)
                     .forEach(candidateIds::add);
@@ -246,7 +246,7 @@ public class StockRecommendationService {
         }
 
         score += context.marketWeights().getOrDefault(symbol.getMarket(), 0D) * 180D;
-        String sectorKey = StockSectorNormalizer.normalizedSectorKey(symbol.getSectorName());
+        String sectorKey = resolveSectorKey(symbol);
         if (sectorKey != null) {
             score += context.sectorWeights().getOrDefault(sectorKey, 0D) * 220D;
         }
@@ -267,6 +267,18 @@ public class StockRecommendationService {
             }
         }
         return rank;
+    }
+
+    private @Nullable String resolveSectorKey(StockSymbol symbol) {
+        StockSectorNormalizer.ResolvedSector resolvedSector = StockSectorNormalizer.resolve(
+                symbol.getAssetType(),
+                symbol.getSectorCode(),
+                symbol.getSectorName(),
+                null,
+                null,
+                null
+        );
+        return resolvedSector.code() == null ? null : resolvedSector.code().name();
     }
 
     private void normalize(Map<?, Double> weights, double total) {

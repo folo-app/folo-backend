@@ -1,4 +1,4 @@
-package com.folo.stock;
+package com.folo.fx;
 
 import com.folo.config.MarketDataSyncProperties;
 import lombok.extern.slf4j.Slf4j;
@@ -9,37 +9,37 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class StockMasterStartupSyncRunner {
+public class FxRateStartupSyncRunner {
 
     private final MarketDataSyncProperties properties;
-    private final StockMasterSyncService stockMasterSyncService;
+    private final FxRateService fxRateService;
 
-    public StockMasterStartupSyncRunner(
+    public FxRateStartupSyncRunner(
             MarketDataSyncProperties properties,
-            StockMasterSyncService stockMasterSyncService
+            FxRateService fxRateService
     ) {
         this.properties = properties;
-        this.stockMasterSyncService = stockMasterSyncService;
+        this.fxRateService = fxRateService;
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    @Order(0)
+    @Order(3)
     public void syncOnStartup() {
         if (!properties.enabled() || !properties.runOnStartup()) {
             log.info(
-                    "stock master startup sync skipped: enabled={}, runOnStartup={}",
+                    "fx startup sync skipped: enabled={}, runOnStartup={}",
                     properties.enabled(),
                     properties.runOnStartup()
             );
             return;
         }
 
-        log.info("stock master startup sync started");
+        log.info("fx startup sync started");
         try {
-            stockMasterSyncService.syncAll();
-            log.info("stock master startup sync completed");
+            fxRateService.syncUsdKrw();
+            log.info("fx startup sync completed");
         } catch (RuntimeException exception) {
-            log.error("stock master startup sync failed; continuing application startup", exception);
+            log.error("fx startup sync failed; continuing application startup", exception);
         }
     }
 }

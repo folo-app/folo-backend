@@ -41,9 +41,28 @@ public class StockIssuerProfileSyncService {
                 .filter(this::isIssuerProfileTarget)
                 .toList();
         if (targets.isEmpty()) {
-            targets = stockSymbolRepository.findActiveStocksByMarket(MarketType.KRX, PageRequest.of(0, 100));
+            targets = stockSymbolRepository.findActiveStocksByMarket(MarketType.KRX, PageRequest.of(0, 100)).stream()
+                    .filter(this::isIssuerProfileTarget)
+                    .toList();
         }
         syncSymbolsInternal(targets);
+    }
+
+    public void syncAllActiveSymbols() {
+        syncSymbolsInternal(
+                stockSymbolRepository.findAllByActiveTrueOrderByIdAsc().stream()
+                        .filter(this::isIssuerProfileTarget)
+                        .toList()
+        );
+    }
+
+    public void syncMissingActiveSymbols() {
+        syncSymbolsInternal(
+                stockSymbolRepository.findActiveStocksByMarketWithoutIssuerProfile(MarketType.KRX, StockDataProvider.OPENDART)
+                        .stream()
+                        .filter(this::isIssuerProfileTarget)
+                        .toList()
+        );
     }
 
     public void syncSymbols(Collection<Long> stockSymbolIds) {
@@ -163,7 +182,8 @@ public class StockIssuerProfileSyncService {
     private boolean isIssuerProfileTarget(StockSymbol stockSymbol) {
         return stockSymbol.getMarket() == MarketType.KRX
                 && stockSymbol.getAssetType() == AssetType.STOCK
-                && stockSymbol.isActive();
+                && stockSymbol.isActive()
+                && !KrxPreferredStockSupport.isKrxPreferredStock(stockSymbol);
     }
 
     private String firstNonBlank(String... values) {

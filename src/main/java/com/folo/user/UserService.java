@@ -5,6 +5,8 @@ import com.folo.auth.UserAuthIdentityRepository;
 import com.folo.common.exception.ApiException;
 import com.folo.common.exception.ErrorCode;
 import com.folo.follow.SocialRelationService;
+import com.folo.portfolio.Portfolio;
+import com.folo.portfolio.PortfolioRepository;
 import com.folo.security.FieldEncryptor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,6 +21,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserAuthIdentityRepository userAuthIdentityRepository;
     private final SocialRelationService socialRelationService;
+    private final PortfolioRepository portfolioRepository;
     private final FieldEncryptor fieldEncryptor;
     private final PasswordEncoder passwordEncoder;
 
@@ -26,12 +29,14 @@ public class UserService {
             UserRepository userRepository,
             UserAuthIdentityRepository userAuthIdentityRepository,
             SocialRelationService socialRelationService,
+            PortfolioRepository portfolioRepository,
             FieldEncryptor fieldEncryptor,
             PasswordEncoder passwordEncoder
     ) {
         this.userRepository = userRepository;
         this.userAuthIdentityRepository = userAuthIdentityRepository;
         this.socialRelationService = socialRelationService;
+        this.portfolioRepository = portfolioRepository;
         this.fieldEncryptor = fieldEncryptor;
         this.passwordEncoder = passwordEncoder;
     }
@@ -40,6 +45,7 @@ public class UserService {
     public MyProfileResponse getMe(Long userId) {
         User user = userRepository.findByIdAndActiveTrue(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+        Portfolio portfolio = loadOrCreatePortfolio(user);
         return new MyProfileResponse(
                 user.getId(),
                 user.getNickname(),
@@ -49,6 +55,7 @@ public class UserService {
                 socialRelationService.followingCount(userId),
                 user.getPortfolioVisibility(),
                 user.getReturnVisibility(),
+                portfolio.getDisplayCurrency(),
                 user.getCreatedAt().toString()
         );
     }
@@ -69,6 +76,10 @@ public class UserService {
                 request.portfolioVisibility(),
                 request.returnVisibility()
         );
+        if (request.displayCurrency() != null) {
+            Portfolio portfolio = loadOrCreatePortfolio(user);
+            portfolio.setDisplayCurrency(request.displayCurrency());
+        }
 
         return getMe(userId);
     }
@@ -155,5 +166,10 @@ public class UserService {
         if (!valid) {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "비밀번호는 8자 이상이며 영문, 숫자, 특수문자를 포함해야 합니다.");
         }
+    }
+
+    private Portfolio loadOrCreatePortfolio(User user) {
+        return portfolioRepository.findByUserId(user.getId())
+                .orElseGet(() -> portfolioRepository.save(Portfolio.defaultOf(user)));
     }
 }

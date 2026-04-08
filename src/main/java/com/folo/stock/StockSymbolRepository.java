@@ -10,6 +10,8 @@ import java.util.Optional;
 
 public interface StockSymbolRepository extends JpaRepository<StockSymbol, Long> {
 
+    List<StockSymbol> findAllByActiveTrueOrderByIdAsc();
+
     Optional<StockSymbol> findByMarketAndTicker(MarketType market, String ticker);
 
     Optional<StockSymbol> findByTickerAndMarket(MarketType market, String ticker);
@@ -70,6 +72,22 @@ public interface StockSymbolRepository extends JpaRepository<StockSymbol, Long> 
                      s.name asc
             """)
     List<StockSymbol> findActiveStocksByMarket(MarketType market, Pageable pageable);
+
+    @Query("""
+            select s
+            from StockSymbol s
+            where s.active = true
+              and s.market = :market
+              and s.assetType = com.folo.common.enums.AssetType.STOCK
+              and not exists (
+                    select 1
+                    from StockIssuerProfile p
+                    where p.stockSymbol = s
+                      and p.provider = :provider
+              )
+            order by s.id asc
+            """)
+    List<StockSymbol> findActiveStocksByMarketWithoutIssuerProfile(MarketType market, StockDataProvider provider);
 
     @Query("""
             select s

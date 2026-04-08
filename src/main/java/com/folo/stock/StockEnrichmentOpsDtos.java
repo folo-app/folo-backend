@@ -6,7 +6,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 record StockEnrichmentSyncRequest(
-        @Nullable List<Long> stockSymbolIds
+        @Nullable List<Long> stockSymbolIds,
+        @Nullable String mode
 ) {
 }
 
