@@ -17,11 +17,15 @@ record PortfolioHoldingItem(
         @Nullable BigDecimal returnAmount,
         BigDecimal returnRate,
         BigDecimal weight,
+        @Nullable String sectorCode,
         @Nullable String sectorName,
         String assetType,
         @Nullable String currencyCode,
         @Nullable BigDecimal annualDividendYield,
-        List<Integer> dividendMonths
+        List<Integer> dividendMonths,
+        @Nullable BigDecimal displayTotalInvested,
+        @Nullable BigDecimal displayTotalValue,
+        @Nullable BigDecimal displayReturnAmount
 ) {
 }
 
@@ -54,6 +58,9 @@ record PortfolioResponse(
         @Nullable BigDecimal cashValue,
         BigDecimal cashWeight,
         @Nullable String syncedAt,
+        String displayCurrency,
+        @Nullable String fxAsOf,
+        boolean fxStale,
         boolean isFullyVisible
 ) {
 }

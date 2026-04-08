@@ -1,9 +1,12 @@
 package com.folo.portfolio;
 
 import com.folo.common.entity.BaseTimeEntity;
+import com.folo.common.enums.CurrencyCode;
 import com.folo.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -52,8 +55,9 @@ public class Portfolio extends BaseTimeEntity {
     @Column(nullable = false, precision = 8, scale = 4)
     private BigDecimal dayReturnRate;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
-    private String displayCurrency;
+    private CurrencyCode displayCurrency;
 
     private LocalDateTime syncedAt;
 
@@ -66,7 +70,7 @@ public class Portfolio extends BaseTimeEntity {
         portfolio.totalReturnRate = BigDecimal.ZERO;
         portfolio.dayReturnAmount = BigDecimal.ZERO;
         portfolio.dayReturnRate = BigDecimal.ZERO;
-        portfolio.displayCurrency = "KRW";
+        portfolio.displayCurrency = CurrencyCode.KRW;
         return portfolio;
     }
 }
