@@ -45,7 +45,7 @@ public class StockEnrichmentOpsController {
             @RequestBody(required = false) StockEnrichmentSyncRequest request
     ) {
         authorize(triggerSecret);
-        SyncMode syncMode = resolveSyncMode(request);
+        SyncMode syncMode = resolveStandardSyncMode(request);
         if (syncMode == SyncMode.PRIORITY) {
             stockDividendEnrichmentService.syncPrioritySymbols();
         } else {
@@ -64,7 +64,7 @@ public class StockEnrichmentOpsController {
             @RequestBody(required = false) StockEnrichmentSyncRequest request
     ) {
         authorize(triggerSecret);
-        SyncMode syncMode = resolveSyncMode(request);
+        SyncMode syncMode = resolveStandardSyncMode(request);
         if (syncMode == SyncMode.PRIORITY) {
             stockMetadataEnrichmentService.syncPrioritySymbols();
         } else {
@@ -83,18 +83,19 @@ public class StockEnrichmentOpsController {
             @RequestBody(required = false) StockEnrichmentSyncRequest request
     ) {
         authorize(triggerSecret);
-        SyncMode syncMode = resolveSyncMode(request);
-        if (syncMode == SyncMode.PRIORITY) {
-            stockIssuerProfileSyncService.syncPrioritySymbols();
-        } else {
-            stockIssuerProfileSyncService.syncSymbols(request.stockSymbolIds());
+        SyncMode syncMode = resolveIssuerProfileSyncMode(request);
+        switch (syncMode) {
+            case PRIORITY -> stockIssuerProfileSyncService.syncPrioritySymbols();
+            case EXPLICIT -> stockIssuerProfileSyncService.syncSymbols(request.stockSymbolIds());
+            case FULL -> stockIssuerProfileSyncService.syncAllActiveSymbols();
+            case MISSING -> stockIssuerProfileSyncService.syncMissingActiveSymbols();
         }
 
         return ApiResponse.success(
                 new StockEnrichmentSyncResponse(
                         "ISSUER_PROFILE",
                         syncMode.name(),
-                        syncMode == SyncMode.PRIORITY ? 0 : request.stockSymbolIds().size()
+                        requestedCount(syncMode, request)
                 ),
                 "OPENDART issuer profile sync가 실행되었습니다."
         );
@@ -122,15 +123,52 @@ public class StockEnrichmentOpsController {
         }
     }
 
-    private SyncMode resolveSyncMode(StockEnrichmentSyncRequest request) {
+    private SyncMode resolveStandardSyncMode(StockEnrichmentSyncRequest request) {
         List<Long> stockSymbolIds = request == null ? null : request.stockSymbolIds();
-        return stockSymbolIds == null || stockSymbolIds.isEmpty()
-                ? SyncMode.PRIORITY
-                : SyncMode.EXPLICIT;
+        if (stockSymbolIds != null && !stockSymbolIds.isEmpty()) {
+            return SyncMode.EXPLICIT;
+        }
+
+        String rawMode = request == null ? null : request.mode();
+        if (!StringUtils.hasText(rawMode)) {
+            return SyncMode.PRIORITY;
+        }
+
+        SyncMode parsedMode = parseMode(rawMode);
+        if (parsedMode != SyncMode.PRIORITY && parsedMode != SyncMode.EXPLICIT) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "해당 endpoint는 PRIORITY 또는 EXPLICIT 모드만 지원합니다.");
+        }
+        return parsedMode;
+    }
+
+    private SyncMode resolveIssuerProfileSyncMode(StockEnrichmentSyncRequest request) {
+        List<Long> stockSymbolIds = request == null ? null : request.stockSymbolIds();
+        if (stockSymbolIds != null && !stockSymbolIds.isEmpty()) {
+            return SyncMode.EXPLICIT;
+        }
+
+        String rawMode = request == null ? null : request.mode();
+        return StringUtils.hasText(rawMode) ? parseMode(rawMode) : SyncMode.PRIORITY;
+    }
+
+    private int requestedCount(SyncMode syncMode, StockEnrichmentSyncRequest request) {
+        return syncMode == SyncMode.EXPLICIT && request != null && request.stockSymbolIds() != null
+                ? request.stockSymbolIds().size()
+                : 0;
+    }
+
+    private SyncMode parseMode(String rawMode) {
+        try {
+            return SyncMode.valueOf(rawMode.trim().toUpperCase());
+        } catch (IllegalArgumentException exception) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "지원하지 않는 sync mode입니다: " + rawMode);
+        }
     }
 
     private enum SyncMode {
         PRIORITY,
-        EXPLICIT
+        EXPLICIT,
+        FULL,
+        MISSING
     }
 }

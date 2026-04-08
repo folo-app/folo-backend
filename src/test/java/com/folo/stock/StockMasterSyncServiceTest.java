@@ -26,6 +26,7 @@ class StockMasterSyncServiceTest {
         StockMasterSyncProvider provider = mock(StockMasterSyncProvider.class);
         StockSymbolRepository stockSymbolRepository = mock(StockSymbolRepository.class);
         StockSymbolSyncRunRepository syncRunRepository = mock(StockSymbolSyncRunRepository.class);
+        KrxDomesticSectorMapService sectorMapService = mock(KrxDomesticSectorMapService.class);
 
         when(provider.provider()).thenReturn(StockDataProvider.KIS);
         when(provider.isConfigured()).thenReturn(true);
@@ -52,7 +53,8 @@ class StockMasterSyncServiceTest {
                 properties(),
                 List.of(provider),
                 stockSymbolRepository,
-                syncRunRepository
+                syncRunRepository,
+                sectorMapService
         );
 
         service.syncMarket(provider, MarketType.KRX);
@@ -60,7 +62,8 @@ class StockMasterSyncServiceTest {
         ArgumentCaptor<StockSymbol> captor = ArgumentCaptor.forClass(StockSymbol.class);
         verify(stockSymbolRepository).save(captor.capture());
         StockSymbol saved = captor.getValue();
-        assertEquals("Technology", saved.getSectorName());
+        assertEquals(StockSectorCode.INFORMATION_TECHNOLOGY, saved.getSectorCode());
+        assertEquals(StockSectorCode.INFORMATION_TECHNOLOGY.label(), saved.getSectorName());
         assertEquals(new BigDecimal("2.2500"), saved.getAnnualDividendYield());
         assertEquals("3,6,9,12", saved.getDividendMonthsCsv());
         assertEquals("삼성전자", saved.getName());
@@ -72,6 +75,7 @@ class StockMasterSyncServiceTest {
         StockMasterSyncProvider provider = mock(StockMasterSyncProvider.class);
         StockSymbolRepository stockSymbolRepository = mock(StockSymbolRepository.class);
         StockSymbolSyncRunRepository syncRunRepository = mock(StockSymbolSyncRunRepository.class);
+        KrxDomesticSectorMapService sectorMapService = mock(KrxDomesticSectorMapService.class);
 
         when(provider.provider()).thenReturn(StockDataProvider.KIS);
         when(provider.isConfigured()).thenReturn(true);
@@ -91,7 +95,8 @@ class StockMasterSyncServiceTest {
                 properties(),
                 List.of(provider),
                 stockSymbolRepository,
-                syncRunRepository
+                syncRunRepository,
+                sectorMapService
         );
 
         service.syncMarket(provider, MarketType.KRX);
@@ -99,10 +104,67 @@ class StockMasterSyncServiceTest {
         ArgumentCaptor<StockSymbol> captor = ArgumentCaptor.forClass(StockSymbol.class);
         verify(stockSymbolRepository, times(1)).save(captor.capture());
         StockSymbol saved = captor.getValue();
-        assertEquals("Semiconductors", saved.getSectorName());
+        assertEquals(StockSectorCode.INFORMATION_TECHNOLOGY, saved.getSectorCode());
+        assertEquals(StockSectorCode.INFORMATION_TECHNOLOGY.label(), saved.getSectorName());
         assertEquals(new BigDecimal("2.1500"), saved.getAnnualDividendYield());
         assertEquals("3,6,9,12", saved.getDividendMonthsCsv());
         assertNull(saved.getId());
+    }
+
+    @Test
+    void syncMarketFallsBackToSecondarySectorMapBeforeOther() {
+        StockMasterSyncProvider provider = mock(StockMasterSyncProvider.class);
+        StockSymbolRepository stockSymbolRepository = mock(StockSymbolRepository.class);
+        StockSymbolSyncRunRepository syncRunRepository = mock(StockSymbolSyncRunRepository.class);
+        KrxDomesticSectorMapService sectorMapService = mock(KrxDomesticSectorMapService.class);
+
+        when(provider.provider()).thenReturn(StockDataProvider.KIS);
+        when(provider.isConfigured()).thenReturn(true);
+        when(provider.fetchBatch(eq(MarketType.KRX), eq(null), eq(500)))
+                .thenReturn(new StockMasterSyncBatch(List.of(new StockMasterSymbolRecord(
+                        MarketType.KRX,
+                        "005930",
+                        "삼성전자",
+                        AssetType.STOCK,
+                        true,
+                        "XKRX",
+                        "KRW",
+                        "005930",
+                        null,
+                        null,
+                        null
+                )), null));
+
+        when(stockSymbolRepository.findByMarketAndTicker(MarketType.KRX, "005930"))
+                .thenReturn(Optional.empty());
+        when(stockSymbolRepository.findAllBySourceProviderAndMarket(StockDataProvider.KIS, MarketType.KRX))
+                .thenReturn(List.of());
+        when(stockSymbolRepository.save(any(StockSymbol.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(syncRunRepository.save(any(StockSymbolSyncRun.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(sectorMapService.resolve(any(StockSymbol.class))).thenReturn(new StockMetadataEnrichmentRecord(
+                "Technology",
+                "Semiconductors",
+                StockClassificationScheme.KRX_SECTOR_MAP,
+                "krx:sector-map:v1"
+        ));
+
+        StockMasterSyncService service = new StockMasterSyncService(
+                properties(),
+                List.of(provider),
+                stockSymbolRepository,
+                syncRunRepository,
+                sectorMapService
+        );
+
+        service.syncMarket(provider, MarketType.KRX);
+
+        ArgumentCaptor<StockSymbol> captor = ArgumentCaptor.forClass(StockSymbol.class);
+        verify(stockSymbolRepository).save(captor.capture());
+        StockSymbol saved = captor.getValue();
+        assertEquals(StockSectorCode.INFORMATION_TECHNOLOGY, saved.getSectorCode());
+        assertEquals("정보기술", saved.getSectorName());
     }
 
     private StockMasterSymbolRecord masterRecord() {

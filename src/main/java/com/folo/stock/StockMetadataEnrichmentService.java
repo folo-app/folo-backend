@@ -139,13 +139,14 @@ public class StockMetadataEnrichmentService {
         entity.setLastEnrichedAt(LocalDateTime.now());
         stockSymbolEnrichmentRepository.save(entity);
 
-        String representativeSectorName = StockSectorNormalizer.normalizeForMetadata(
+        StockSectorCode representativeSectorCode = StockSectorNormalizer.normalizeSectorCodeForMetadata(
                 record.sectorNameRaw(),
                 record.industryNameRaw(),
                 record.classificationScheme()
         );
-        if (representativeSectorName != null && !representativeSectorName.isBlank()) {
-            stockSymbol.setSectorName(representativeSectorName);
+        if (representativeSectorCode != null) {
+            stockSymbol.setSectorCode(representativeSectorCode);
+            stockSymbol.setSectorName(StockSectorNormalizer.displayLabel(representativeSectorCode));
             stockSymbolRepository.save(stockSymbol);
         }
         return 1;

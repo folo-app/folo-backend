@@ -62,7 +62,8 @@ class StockMetadataEnrichmentServiceTest {
                 .findByStockSymbolIdAndProvider(stockSymbol.getId(), StockDataProvider.POLYGON)
                 .orElseThrow();
 
-        assertThat(refreshed.getSectorName()).isEqualTo(StockSectorNormalizer.INFORMATION_TECHNOLOGY);
+        assertThat(refreshed.getSectorCode()).isEqualTo(StockSectorCode.INFORMATION_TECHNOLOGY);
+        assertThat(refreshed.getSectorName()).isEqualTo(StockSectorCode.INFORMATION_TECHNOLOGY.label());
         assertThat(enrichment.getIndustryNameRaw()).isEqualTo("SEMICONDUCTORS AND RELATED DEVICES");
         assertThat(enrichment.getClassificationScheme()).isEqualTo(StockClassificationScheme.SIC);
         assertThat(stockSymbolSyncRunRepository.findAll()).hasSize(1);

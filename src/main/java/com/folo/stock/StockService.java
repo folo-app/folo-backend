@@ -222,7 +222,14 @@ public class StockService {
                 stockBrandingService.getPublicLogoUrl(stock),
                 currentPrice,
                 dayReturnRate,
-                StockSectorNormalizer.normalizeStoredSector(stock.getSectorName())
+                StockSectorNormalizer.resolve(
+                        stock.getAssetType(),
+                        stock.getSectorCode(),
+                        stock.getSectorName(),
+                        null,
+                        null,
+                        null
+                ).label()
         );
     }
 
@@ -265,18 +272,14 @@ public class StockService {
     }
 
     private String resolveDisplaySector(StockSymbol stock, @Nullable StockSymbolEnrichment enrichment) {
-        String normalized = StockSectorNormalizer.normalizeStoredSector(stock.getSectorName());
-        if (normalized != null) {
-            return normalized;
-        }
-        if (enrichment == null) {
-            return null;
-        }
-        return StockSectorNormalizer.normalizeForMetadata(
-                enrichment.getSectorNameRaw(),
-                enrichment.getIndustryNameRaw(),
-                enrichment.getClassificationScheme()
-        );
+        return StockSectorNormalizer.resolve(
+                stock.getAssetType(),
+                stock.getSectorCode(),
+                stock.getSectorName(),
+                enrichment != null ? enrichment.getSectorNameRaw() : null,
+                enrichment != null ? enrichment.getIndustryNameRaw() : null,
+                enrichment != null ? enrichment.getClassificationScheme() : null
+        ).label();
     }
 
     private StockSymbolEnrichment loadLatestEnrichment(Long stockSymbolId) {

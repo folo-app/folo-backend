@@ -152,6 +152,7 @@ integration:
       app-key: ${KIS_APP_KEY:}
       app-secret: ${KIS_APP_SECRET:}
       domestic-master-file-url: ${KIS_DOMESTIC_MASTER_FILE_URL:${KIS_MASTER_FILE_URL:}}
+      domestic-sector-map-file-url: ${KIS_DOMESTIC_SECTOR_MAP_FILE_URL:data/kis/kis-domestic-sector-map.csv}
       overseas-master-file-url: ${KIS_OVERSEAS_MASTER_FILE_URL:}
 
 springdoc:

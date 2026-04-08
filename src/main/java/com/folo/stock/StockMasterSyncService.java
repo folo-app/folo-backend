@@ -1,5 +1,6 @@
 package com.folo.stock;
 
+import com.folo.common.enums.AssetType;
 import com.folo.config.MarketDataSyncProperties;
 import com.folo.common.enums.MarketType;
 import jakarta.transaction.Transactional;
@@ -18,17 +19,20 @@ public class StockMasterSyncService {
     private final List<StockMasterSyncProvider> providers;
     private final StockSymbolRepository stockSymbolRepository;
     private final StockSymbolSyncRunRepository stockSymbolSyncRunRepository;
+    private final KrxDomesticSectorMapService krxDomesticSectorMapService;
 
     public StockMasterSyncService(
             MarketDataSyncProperties properties,
             List<StockMasterSyncProvider> providers,
             StockSymbolRepository stockSymbolRepository,
-            StockSymbolSyncRunRepository stockSymbolSyncRunRepository
+            StockSymbolSyncRunRepository stockSymbolSyncRunRepository,
+            KrxDomesticSectorMapService krxDomesticSectorMapService
     ) {
         this.properties = properties;
         this.providers = providers;
         this.stockSymbolRepository = stockSymbolRepository;
         this.stockSymbolSyncRunRepository = stockSymbolSyncRunRepository;
+        this.krxDomesticSectorMapService = krxDomesticSectorMapService;
     }
 
     public void syncAll() {
@@ -123,9 +127,47 @@ public class StockMasterSyncService {
     }
 
     private void applyMasterMetadataFallback(StockSymbol stockSymbol, StockMasterSymbolRecord record) {
-        if (!StringUtils.hasText(stockSymbol.getSectorName())
-                && StringUtils.hasText(record.sectorName())) {
-            stockSymbol.setSectorName(record.sectorName().trim());
+        if (stockSymbol.getAssetType() == AssetType.ETF) {
+            stockSymbol.setSectorCode(null);
+            stockSymbol.setSectorName("ETF");
+        } else {
+            if (stockSymbol.getSectorCode() == null && StringUtils.hasText(stockSymbol.getSectorName())) {
+                StockSectorCode existingCode = resolveFallbackSectorCode(stockSymbol.getSectorName());
+                if (existingCode != null) {
+                    stockSymbol.setSectorCode(existingCode);
+                    stockSymbol.setSectorName(StockSectorNormalizer.displayLabel(existingCode));
+                }
+            }
+
+            if (stockSymbol.getSectorCode() == null && StringUtils.hasText(record.sectorName())) {
+                StockSectorCode fallbackCode = resolveFallbackSectorCode(record.sectorName());
+                if (fallbackCode != null) {
+                    stockSymbol.setSectorCode(fallbackCode);
+                    stockSymbol.setSectorName(StockSectorNormalizer.displayLabel(fallbackCode));
+                }
+            }
+
+            if (stockSymbol.getSectorCode() == null) {
+                StockMetadataEnrichmentRecord mappedRecord = krxDomesticSectorMapService.resolve(stockSymbol);
+                if (mappedRecord != null) {
+                    StockSectorCode mappedCode = StockSectorNormalizer.normalizeSectorCodeForMetadata(
+                            mappedRecord.sectorNameRaw(),
+                            mappedRecord.industryNameRaw(),
+                            mappedRecord.classificationScheme()
+                    );
+                    if (mappedCode != null) {
+                        stockSymbol.setSectorCode(mappedCode);
+                        stockSymbol.setSectorName(StockSectorNormalizer.displayLabel(mappedCode));
+                    }
+                }
+            }
+
+            if (stockSymbol.getSectorCode() == null) {
+                stockSymbol.setSectorCode(StockSectorCode.OTHER);
+                stockSymbol.setSectorName(StockSectorNormalizer.displayLabel(StockSectorCode.OTHER));
+            }
+
+            stockSymbol.setSectorName(StockSectorNormalizer.displayLabel(stockSymbol.getSectorCode()));
         }
 
         if (stockSymbol.getAnnualDividendYield() == null
@@ -137,6 +179,14 @@ public class StockMasterSyncService {
                 && StringUtils.hasText(record.dividendMonthsCsv())) {
             stockSymbol.setDividendMonthsCsv(record.dividendMonthsCsv().trim());
         }
+    }
+
+    private StockSectorCode resolveFallbackSectorCode(String rawSectorName) {
+        StockSectorCode normalizedStoredCode = StockSectorNormalizer.normalizeStoredSectorCode(rawSectorName);
+        if (normalizedStoredCode != null) {
+            return normalizedStoredCode;
+        }
+        return StockSectorNormalizer.normalizeSectorCodeForMetadata(rawSectorName, rawSectorName, null);
     }
 
     private boolean hasPositiveValue(BigDecimal value) {

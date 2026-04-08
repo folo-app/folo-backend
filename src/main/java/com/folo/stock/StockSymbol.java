@@ -62,6 +62,10 @@ public class StockSymbol extends BaseTimeEntity {
     @Column(length = 100)
     private String sectorName;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 40)
+    private StockSectorCode sectorCode;
+
     @Column(precision = 8, scale = 4)
     private java.math.BigDecimal annualDividendYield;
 

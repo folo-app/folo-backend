@@ -90,6 +90,56 @@ class StockEnrichmentOpsControllerTest {
     }
 
     @Test
+    void issuerProfileSyncEndpointRunsFullSyncWhenRequested() throws Exception {
+        mockMvc.perform(post("/internal/stock-enrichment/issuer-profiles/sync")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-Internal-Trigger-Secret", "test-ops-secret")
+                        .content("""
+                                {
+                                  "mode": "FULL"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.scope").value("ISSUER_PROFILE"))
+                .andExpect(jsonPath("$.data.mode").value("FULL"))
+                .andExpect(jsonPath("$.data.requestedCount").value(0));
+
+        verify(stockIssuerProfileSyncService).syncAllActiveSymbols();
+    }
+
+    @Test
+    void issuerProfileSyncEndpointRunsMissingSyncWhenRequested() throws Exception {
+        mockMvc.perform(post("/internal/stock-enrichment/issuer-profiles/sync")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-Internal-Trigger-Secret", "test-ops-secret")
+                        .content("""
+                                {
+                                  "mode": "MISSING"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.scope").value("ISSUER_PROFILE"))
+                .andExpect(jsonPath("$.data.mode").value("MISSING"))
+                .andExpect(jsonPath("$.data.requestedCount").value(0));
+
+        verify(stockIssuerProfileSyncService).syncMissingActiveSymbols();
+    }
+
+    @Test
+    void metadataSyncEndpointRejectsUnsupportedFullMode() throws Exception {
+        mockMvc.perform(post("/internal/stock-enrichment/metadata/sync")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-Internal-Trigger-Secret", "test-ops-secret")
+                        .content("""
+                                {
+                                  "mode": "FULL"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
     void kisDividendDebugEndpointReturnsCapturedPayloadSummary() throws Exception {
         org.mockito.BDDMockito.given(kisDomesticDividendDebugService.capture(org.mockito.ArgumentMatchers.any()))
                 .willReturn(new KisDividendDebugResponse(
