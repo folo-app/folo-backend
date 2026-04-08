@@ -20,6 +20,15 @@ public enum ErrorCode {
     CANNOT_FOLLOW_SELF(HttpStatus.BAD_REQUEST, "본인을 팔로우할 수 없습니다."),
     INVALID_VERIFICATION_CODE(HttpStatus.BAD_REQUEST, "인증 코드가 올바르지 않습니다."),
     VERIFICATION_RESEND_TOO_SOON(HttpStatus.TOO_MANY_REQUESTS, "인증 코드 재발송은 잠시 후 다시 시도해주세요."),
+    SOCIAL_AUTH_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "지원하지 않는 소셜 로그인입니다."),
+    INVALID_SOCIAL_AUTH_STATE(HttpStatus.BAD_REQUEST, "유효하지 않은 소셜 로그인 상태값입니다."),
+    EXPIRED_SOCIAL_AUTH_STATE(HttpStatus.BAD_REQUEST, "만료된 소셜 로그인 요청입니다."),
+    INVALID_SOCIAL_AUTH_HANDOFF(HttpStatus.BAD_REQUEST, "유효하지 않은 소셜 로그인 인계 코드입니다."),
+    EXPIRED_SOCIAL_AUTH_HANDOFF(HttpStatus.BAD_REQUEST, "만료된 소셜 로그인 인계 코드입니다."),
+    INVALID_SOCIAL_AUTH_PENDING(HttpStatus.BAD_REQUEST, "유효하지 않은 소셜 로그인 대기 상태입니다."),
+    EXPIRED_SOCIAL_AUTH_PENDING(HttpStatus.BAD_REQUEST, "만료된 소셜 로그인 대기 상태입니다."),
+    SOCIAL_ACCOUNT_LINK_REQUIRED(HttpStatus.CONFLICT, "기존 계정과 연결 확인이 필요합니다."),
+    DUPLICATE_SOCIAL_IDENTITY(HttpStatus.CONFLICT, "이미 다른 계정에 연결된 소셜 로그인입니다."),
     INSUFFICIENT_HOLDINGS(HttpStatus.BAD_REQUEST, "보유 수량이 부족합니다."),
     TRADE_NOT_VISIBLE(HttpStatus.FORBIDDEN, "해당 거래를 조회할 수 없습니다.");
 

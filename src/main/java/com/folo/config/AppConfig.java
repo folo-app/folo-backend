@@ -14,7 +14,8 @@ import org.springframework.context.annotation.Configuration;
         KisStubProperties.class,
         KisOAuthProperties.class,
         MarketDataSyncProperties.class,
-        OpendartProperties.class
+        OpendartProperties.class,
+        SocialAuthProperties.class
 })
 public class AppConfig {
 }

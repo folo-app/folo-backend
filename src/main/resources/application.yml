@@ -50,6 +50,12 @@ app:
     from-name: ${MAIL_FROM_NAME:Folo}
   ops:
     trigger-secret: ${OPS_TRIGGER_SECRET:}
+  auth:
+    social:
+      app-redirect-url: ${SOCIAL_APP_REDIRECT_URL:folo://auth/callback}
+      authorization-state-ttl-seconds: ${SOCIAL_AUTH_STATE_TTL:600}
+      handoff-code-ttl-seconds: ${SOCIAL_AUTH_HANDOFF_TTL:300}
+      pending-flow-ttl-seconds: ${SOCIAL_AUTH_PENDING_TTL:1800}
   storage:
     upload-root-dir: ${FILE_STORAGE_ROOT_DIR:/tmp/folo-uploads}
     stock-logo-root-dir: ${FILE_STORAGE_STOCK_LOGO_ROOT_DIR:./logo}

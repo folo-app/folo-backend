@@ -20,6 +20,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.lang.Nullable;
 
 @Getter
 @Setter
@@ -64,6 +65,21 @@ public class UserAuthIdentity extends BaseTimeEntity {
         this.email = email;
         this.passwordHash = passwordHash;
         this.emailVerified = false;
+    }
+
+    public UserAuthIdentity(
+            User user,
+            AuthProvider provider,
+            String providerUserId,
+            @Nullable String email,
+            boolean emailVerified
+    ) {
+        this.user = user;
+        this.provider = provider;
+        this.providerUserId = providerUserId;
+        this.email = email;
+        this.passwordHash = null;
+        this.emailVerified = emailVerified;
     }
 
     public void verifyEmail() {

@@ -14,4 +14,8 @@ public interface UserAuthIdentityRepository extends JpaRepository<UserAuthIdenti
     Optional<UserAuthIdentity> findByEmail(String email);
 
     Optional<UserAuthIdentity> findByUserIdAndProvider(Long userId, AuthProvider provider);
+
+    Optional<UserAuthIdentity> findFirstByUserIdOrderByCreatedAtAsc(Long userId);
+
+    boolean existsByUserIdAndProvider(Long userId, AuthProvider provider);
 }

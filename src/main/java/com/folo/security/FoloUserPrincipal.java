@@ -1,9 +1,11 @@
 package com.folo.security;
 
+import org.springframework.lang.Nullable;
+
 import java.io.Serializable;
 
 public record FoloUserPrincipal(
         Long userId,
-        String email
+        @Nullable String email
 ) implements Serializable {
 }
