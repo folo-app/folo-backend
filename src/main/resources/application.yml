@@ -56,6 +56,38 @@ app:
       authorization-state-ttl-seconds: ${SOCIAL_AUTH_STATE_TTL:600}
       handoff-code-ttl-seconds: ${SOCIAL_AUTH_HANDOFF_TTL:300}
       pending-flow-ttl-seconds: ${SOCIAL_AUTH_PENDING_TTL:1800}
+      google:
+        enabled: ${GOOGLE_AUTH_ENABLED:false}
+        client-id: ${GOOGLE_AUTH_CLIENT_ID:}
+        client-secret: ${GOOGLE_AUTH_CLIENT_SECRET:}
+        redirect-uri: ${GOOGLE_AUTH_REDIRECT_URI:https://api.example.com/api/auth/social/google/callback}
+        authorization-url: ${GOOGLE_AUTHORIZATION_URL:https://accounts.google.com/o/oauth2/v2/auth}
+        token-url: ${GOOGLE_TOKEN_URL:https://oauth2.googleapis.com/token}
+        user-info-url: ${GOOGLE_USER_INFO_URL:https://openidconnect.googleapis.com/v1/userinfo}
+        scope: ${GOOGLE_AUTH_SCOPE:openid email profile}
+      kakao:
+        enabled: ${KAKAO_AUTH_ENABLED:false}
+        client-id: ${KAKAO_AUTH_CLIENT_ID:}
+        client-secret: ${KAKAO_AUTH_CLIENT_SECRET:}
+        redirect-uri: ${KAKAO_AUTH_REDIRECT_URI:https://api.example.com/api/auth/social/kakao/callback}
+        authorization-url: ${KAKAO_AUTHORIZATION_URL:https://kauth.kakao.com/oauth/authorize}
+        token-url: ${KAKAO_TOKEN_URL:https://kauth.kakao.com/oauth/token}
+        user-info-url: ${KAKAO_USER_INFO_URL:https://kapi.kakao.com/v2/user/me}
+        scope: ${KAKAO_AUTH_SCOPE:account_email profile_nickname profile_image}
+      naver:
+        enabled: ${NAVER_AUTH_ENABLED:false}
+        client-id: ${NAVER_AUTH_CLIENT_ID:}
+        client-secret: ${NAVER_AUTH_CLIENT_SECRET:}
+        redirect-uri: ${NAVER_AUTH_REDIRECT_URI:https://api.example.com/api/auth/social/naver/callback}
+        authorization-url: ${NAVER_AUTHORIZATION_URL:https://nid.naver.com/oauth2.0/authorize}
+        token-url: ${NAVER_TOKEN_URL:https://nid.naver.com/oauth2/token}
+        user-info-url: ${NAVER_USER_INFO_URL:https://openapi.naver.com/v1/nid/me}
+        scope: ${NAVER_AUTH_SCOPE:name email nickname profile_image}
+      apple:
+        enabled: ${APPLE_AUTH_ENABLED:false}
+        issuer: ${APPLE_AUTH_ISSUER:https://appleid.apple.com}
+        jwk-set-url: ${APPLE_AUTH_JWK_SET_URL:https://appleid.apple.com/auth/keys}
+        audiences: ${APPLE_AUTH_AUDIENCES:com.godten.folo}
   storage:
     upload-root-dir: ${FILE_STORAGE_ROOT_DIR:/tmp/folo-uploads}
     stock-logo-root-dir: ${FILE_STORAGE_STOCK_LOGO_ROOT_DIR:./logo}

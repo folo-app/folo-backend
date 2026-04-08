@@ -2,11 +2,10 @@ package com.folo.auth;
 
 import com.folo.common.api.ApiResponse;
 import com.folo.common.enums.AuthProvider;
-import com.folo.common.exception.ApiException;
-import com.folo.common.exception.ErrorCode;
 import com.folo.security.SecurityUtils;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,9 +21,14 @@ import java.util.Map;
 public class SocialAuthController {
 
     private final SocialAuthService socialAuthService;
+    private final AppleIdentityTokenVerifier appleIdentityTokenVerifier;
 
-    public SocialAuthController(SocialAuthService socialAuthService) {
+    public SocialAuthController(
+            SocialAuthService socialAuthService,
+            @Nullable AppleIdentityTokenVerifier appleIdentityTokenVerifier
+    ) {
         this.socialAuthService = socialAuthService;
+        this.appleIdentityTokenVerifier = appleIdentityTokenVerifier;
     }
 
     @PostMapping("/{provider}/start")
@@ -54,6 +58,24 @@ public class SocialAuthController {
         );
     }
 
+    @PostMapping("/apple/verify")
+    public ApiResponse<SocialAuthExchangeResponse> verifyApple(@Valid @RequestBody AppleNativeAuthRequest request) {
+        if (appleIdentityTokenVerifier == null) {
+            throw new com.folo.common.exception.ApiException(
+                    com.folo.common.exception.ErrorCode.SOCIAL_AUTH_NOT_SUPPORTED,
+                    "APPLE 로그인 연동이 아직 준비되지 않았습니다."
+            );
+        }
+        return ApiResponse.success(
+                socialAuthService.exchangeIdentityDirect(
+                        appleIdentityTokenVerifier.verify(request),
+                        request.deviceId(),
+                        request.deviceName()
+                ),
+                "Apple 로그인 결과를 확인했습니다."
+        );
+    }
+
     @PostMapping("/complete-profile")
     public ApiResponse<AuthResponse> completeProfile(@Valid @RequestBody SocialAuthCompleteProfileRequest request) {
         return ApiResponse.success(
@@ -74,7 +96,10 @@ public class SocialAuthController {
         try {
             return AuthProvider.fromPath(provider);
         } catch (IllegalArgumentException exception) {
-            throw new ApiException(ErrorCode.SOCIAL_AUTH_NOT_SUPPORTED, exception.getMessage());
+            throw new com.folo.common.exception.ApiException(
+                    com.folo.common.exception.ErrorCode.SOCIAL_AUTH_NOT_SUPPORTED,
+                    exception.getMessage()
+            );
         }
     }
 }
