@@ -52,6 +52,7 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/api/auth/find-id",
                                 "/api/auth/password/reset-temp",
+                                "/api/auth/social/*/start",
                                 "/api/internal/stock-enrichment/dividends/sync",
                                 "/api/internal/stock-enrichment/dividends/debug/kis",
                                 "/api/internal/stock-enrichment/metadata/sync",
@@ -59,11 +60,14 @@ public class SecurityConfig {
                                 "/api/auth/refresh",
                                 "/api/auth/email/verify",
                                 "/api/auth/email/confirm",
+                                "/api/auth/social/exchange",
+                                "/api/auth/social/complete-profile",
                                 "/api/uploads/profile-image",
                                 "/auth/signup",
                                 "/auth/login",
                                 "/auth/find-id",
                                 "/auth/password/reset-temp",
+                                "/auth/social/*/start",
                                 "/internal/stock-enrichment/dividends/sync",
                                 "/internal/stock-enrichment/dividends/debug/kis",
                                 "/internal/stock-enrichment/metadata/sync",
@@ -71,6 +75,8 @@ public class SecurityConfig {
                                 "/auth/refresh",
                                 "/auth/email/verify",
                                 "/auth/email/confirm",
+                                "/auth/social/exchange",
+                                "/auth/social/complete-profile",
                                 "/uploads/profile-image"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET,
@@ -78,10 +84,12 @@ public class SecurityConfig {
                                 "/api/stocks/discover",
                                 "/api/stocks/*/logo",
                                 "/api/stocks/*/price",
+                                "/api/auth/social/*/callback",
                                 "/stocks/search",
                                 "/stocks/discover",
                                 "/stocks/*/logo",
-                                "/stocks/*/price"
+                                "/stocks/*/price",
+                                "/auth/social/*/callback"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

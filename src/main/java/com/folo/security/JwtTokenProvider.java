@@ -5,6 +5,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
+import org.springframework.lang.Nullable;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
@@ -42,7 +43,7 @@ public class JwtTokenProvider {
         Claims claims = parse(token);
         return new FoloUserPrincipal(
                 claims.get("userId", Long.class),
-                claims.getSubject()
+                claims.get("email", String.class)
         );
     }
 
@@ -55,7 +56,7 @@ public class JwtTokenProvider {
 
         return new FoloUserPrincipal(
                 claims.get("userId", Long.class),
-                claims.getSubject()
+                claims.get("email", String.class)
         );
     }
 
@@ -67,8 +68,9 @@ public class JwtTokenProvider {
         Instant now = Instant.now();
         return Jwts.builder()
                 .issuer(jwtProperties.issuer())
-                .subject(principal.email())
+                .subject("user:" + principal.userId())
                 .claim("userId", principal.userId())
+                .claim("email", principal.email())
                 .claim("type", type)
                 .id(UUID.randomUUID().toString())
                 .issuedAt(Date.from(now))

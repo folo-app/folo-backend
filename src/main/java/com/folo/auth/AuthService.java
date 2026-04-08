@@ -17,6 +17,7 @@ import com.folo.user.User;
 import com.folo.user.UserRepository;
 import io.jsonwebtoken.JwtException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -188,7 +189,7 @@ public class AuthService {
         }
 
         refreshToken.revoke();
-        UserAuthIdentity identity = findEmailIdentity(refreshToken.getUser());
+        UserAuthIdentity identity = findRefreshIdentity(refreshToken);
         return createTokens(refreshToken.getUser(), identity, refreshToken.getDeviceId(), refreshToken.getDeviceName());
     }
 
@@ -212,7 +213,13 @@ public class AuthService {
         refreshTokenRepository.findByUserIdAndRevokedAtIsNull(userId).forEach(RefreshToken::revoke);
     }
 
-    private AuthResponse issueTokens(UserAuthIdentity identity, String deviceId, String deviceName) {
+    @Transactional
+    AuthResponse issueSession(UserAuthIdentity identity, @Nullable String deviceId, @Nullable String deviceName) {
+        ensureIdentityCanLogin(identity);
+        return issueTokens(identity, deviceId, deviceName);
+    }
+
+    private AuthResponse issueTokens(UserAuthIdentity identity, @Nullable String deviceId, @Nullable String deviceName) {
         return createTokens(identity.getUser(), identity, deviceId, deviceName);
     }
 
@@ -226,6 +233,7 @@ public class AuthService {
         String refreshTokenValue = jwtTokenProvider.generateRefreshToken(principal);
         refreshTokenRepository.save(new RefreshToken(
                 user,
+                identity,
                 HashUtils.sha256(refreshTokenValue),
                 LocalDateTime.now().plusSeconds(jwtProperties.refreshTokenExpirationSeconds()),
                 deviceId,
@@ -236,14 +244,25 @@ public class AuthService {
                 user.getNickname(),
                 identity.getEmail(),
                 user.getProfileImageUrl(),
+                identity.getProvider(),
                 accessToken,
                 refreshTokenValue
         );
     }
 
-    private UserAuthIdentity findEmailIdentity(User user) {
-        return userAuthIdentityRepository.findByUserIdAndProvider(user.getId(), AuthProvider.EMAIL)
-                .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "이메일 계정을 찾을 수 없습니다."));
+    private UserAuthIdentity findRefreshIdentity(RefreshToken refreshToken) {
+        if (refreshToken.getAuthIdentity() != null) {
+            return refreshToken.getAuthIdentity();
+        }
+        return userAuthIdentityRepository.findByUserIdAndProvider(refreshToken.getUser().getId(), AuthProvider.EMAIL)
+                .or(() -> userAuthIdentityRepository.findFirstByUserIdOrderByCreatedAtAsc(refreshToken.getUser().getId()))
+                .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "로그인 계정을 찾을 수 없습니다."));
+    }
+
+    private void ensureIdentityCanLogin(UserAuthIdentity identity) {
+        if (!identity.getUser().isActive()) {
+            throw new ApiException(ErrorCode.UNAUTHORIZED, "탈퇴한 계정입니다.");
+        }
     }
 
     private void issueTemporaryPassword(UserAuthIdentity identity) {

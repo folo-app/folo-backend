@@ -1,5 +1,6 @@
 package com.folo.auth;
 
+import com.folo.common.enums.AuthProvider;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -67,9 +68,106 @@ record ConfirmEmailRequest(
 record AuthResponse(
         Long userId,
         String nickname,
-        String email,
+        @Nullable String email,
         @Nullable String profileImage,
+        AuthProvider authProvider,
         String accessToken,
         String refreshToken
+) {
+}
+
+record SocialAuthStartRequest(
+        @Nullable SocialAuthPlatform platform,
+        @Nullable @Size(max = 255) String deviceId,
+        @Nullable @Size(max = 255) String deviceName
+) {
+}
+
+record SocialAuthStartResponse(
+        String provider,
+        String authorizationUrl,
+        String state
+) {
+}
+
+record SocialAuthExchangeRequest(
+        @NotBlank String handoffCode,
+        @Nullable @Size(max = 255) String deviceId,
+        @Nullable @Size(max = 255) String deviceName
+) {
+}
+
+record SocialAuthExchangeResponse(
+        SocialAuthExchangeStatus status,
+        @Nullable AuthResponse session,
+        @Nullable String pendingToken,
+        @Nullable AuthProvider provider,
+        @Nullable String email,
+        @Nullable String nicknameSuggestion,
+        @Nullable String profileImage,
+        @Nullable String message
+) {
+    static SocialAuthExchangeResponse authenticated(AuthResponse session) {
+        return new SocialAuthExchangeResponse(
+                SocialAuthExchangeStatus.AUTHENTICATED,
+                session,
+                null,
+                session.authProvider(),
+                session.email(),
+                session.nickname(),
+                session.profileImage(),
+                null
+        );
+    }
+
+    static SocialAuthExchangeResponse profileSetupRequired(
+            String pendingToken,
+            AuthProvider provider,
+            @Nullable String email,
+            @Nullable String nicknameSuggestion,
+            @Nullable String profileImage
+    ) {
+        return new SocialAuthExchangeResponse(
+                SocialAuthExchangeStatus.PROFILE_SETUP_REQUIRED,
+                null,
+                pendingToken,
+                provider,
+                email,
+                nicknameSuggestion,
+                profileImage,
+                "추가 프로필 정보를 입력하면 가입이 완료됩니다."
+        );
+    }
+
+    static SocialAuthExchangeResponse accountLinkRequired(
+            String pendingToken,
+            AuthProvider provider,
+            @Nullable String email,
+            @Nullable String nicknameSuggestion,
+            @Nullable String profileImage,
+            String message
+    ) {
+        return new SocialAuthExchangeResponse(
+                SocialAuthExchangeStatus.ACCOUNT_LINK_REQUIRED,
+                null,
+                pendingToken,
+                provider,
+                email,
+                nicknameSuggestion,
+                profileImage,
+                message
+        );
+    }
+}
+
+record SocialAuthCompleteProfileRequest(
+        @NotBlank String pendingToken,
+        @NotBlank @Size(min = 2, max = 20) String nickname,
+        @Nullable @Size(max = 1000) String profileImage
+) {
+}
+
+record SocialAuthLinkRequest(
+        @NotBlank String pendingToken
 ) {
 }
