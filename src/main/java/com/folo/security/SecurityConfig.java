@@ -61,6 +61,7 @@ public class SecurityConfig {
                                 "/api/auth/email/verify",
                                 "/api/auth/email/confirm",
                                 "/api/auth/social/exchange",
+                                "/api/auth/social/apple/verify",
                                 "/api/auth/social/complete-profile",
                                 "/api/uploads/profile-image",
                                 "/auth/signup",
@@ -76,6 +77,7 @@ public class SecurityConfig {
                                 "/auth/email/verify",
                                 "/auth/email/confirm",
                                 "/auth/social/exchange",
+                                "/auth/social/apple/verify",
                                 "/auth/social/complete-profile",
                                 "/uploads/profile-image"
                         ).permitAll()

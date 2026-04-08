@@ -171,3 +171,15 @@ record SocialAuthLinkRequest(
         @NotBlank String pendingToken
 ) {
 }
+
+record AppleNativeAuthRequest(
+        @NotBlank String identityToken,
+        @Nullable String userIdentifier,
+        @Nullable String email,
+        @Nullable String givenName,
+        @Nullable String familyName,
+        @Nullable String nonce,
+        @Nullable @Size(max = 255) String deviceId,
+        @Nullable @Size(max = 255) String deviceName
+) {
+}

@@ -115,6 +115,16 @@ public class SocialAuthService {
                 .toUriString();
     }
 
+    @Transactional
+    public SocialAuthExchangeResponse exchangeIdentityDirect(
+            SocialProviderIdentity identity,
+            @Nullable String deviceId,
+            @Nullable String deviceName
+    ) {
+        SocialHandoffSession handoffSession = buildHandoffSession(identity, deviceId, deviceName);
+        return toExchangeResponse(handoffSession, deviceId, deviceName);
+    }
+
     private SocialHandoffSession buildHandoffSession(
             SocialProviderIdentity identity,
             @Nullable String deviceId,
